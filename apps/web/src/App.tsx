@@ -52,6 +52,7 @@ function App() {
   const edgesRef = useRef<Array<{ from: number; to: number }>>([]);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   // 初始化数据集（节点/边）
   useEffect(() => {
@@ -155,6 +156,11 @@ function App() {
 
   const zoom = (delta: number) => {
     setScale((s) => Math.max(0.4, Math.min(2, s + delta)));
+  };
+
+  const handleSelect = (id: number) => {
+    if (isReadonly) return;
+    setSelectedId(id);
   };
 
   return (
@@ -274,12 +280,20 @@ function App() {
           </div>
             <div className="virtual-list" onScroll={(e) => setScrollTop((e.target as HTMLDivElement).scrollTop)}>
               {visibleNodes.map((n) => (
-                <div key={n.id} className="virtual-row" style={{ transform: `translateY(${n.id * rowHeight}px)` }}>
+                <div
+                  key={n.id}
+                  className={`virtual-row ${selectedId === n.id ? 'selected' : ''}`}
+                  style={{ transform: `translateY(${n.id * rowHeight}px)` }}
+                  onClick={() => handleSelect(n.id)}
+                  role="button"
+                  tabIndex={0}
+                >
                   节点 #{n.id} — x:{n.x.toFixed(1)} y:{n.y.toFixed(1)}
                 </div>
               ))}
               <div style={{ height: sampleNodeCount * rowHeight }} aria-hidden />
             </div>
+            <p>当前选中节点：{selectedId ?? '无'}</p>
           </Section>
         </main>
         <aside className="inspector">

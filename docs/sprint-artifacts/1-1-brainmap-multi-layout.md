@@ -40,7 +40,7 @@ Status: in-progress
   - [x] WS 协同脚本：`tooling/tests/ws-layout-check.ts`（需先启动 API）验证 viewer 拒绝写入、editor 同步广播。  
   - [x] UI e2e 只读校验：`apps/web/tests/layout-readonly.spec.ts`（Playwright）。  
   - [x] UI e2e 协同广播/权限拒绝：`apps/web/tests/layout-collab.spec.ts`。  
-  - [ ] e2e 校验选中保持等更细粒度交互（待补）。
+  - [x] UI e2e 选中保持/只读拒绝选择：`apps/web/tests/layout-selection.spec.ts`。  
 
 ## Dev Notes
 

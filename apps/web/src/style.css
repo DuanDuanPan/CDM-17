@@ -199,6 +199,12 @@ body {
   font-size: 13px;
   color: #0f172a;
   border-bottom: 1px dashed #e2e8f0;
+  cursor: pointer;
+}
+
+.virtual-row.selected {
+  background: #e0ebff;
+  border-left: 3px solid #2563eb;
 }
 
 @media (max-width: 1024px) {
