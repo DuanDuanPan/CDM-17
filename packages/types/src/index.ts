@@ -80,6 +80,18 @@ export interface VisitLog {
   ip?: string;
 }
 
+export type LayoutMode = 'free' | 'tree' | 'logic';
+
+export interface LayoutState {
+  graphId: string;
+  mode: LayoutMode;
+  version: number;
+  updatedAt: string;
+  updatedBy: string;
+  /** arbitrary layout payload: node positions, fold state, toggle flags */
+  payload: Record<string, unknown>;
+}
+
 export interface PluginManifest {
   name: string;
   version: string;
