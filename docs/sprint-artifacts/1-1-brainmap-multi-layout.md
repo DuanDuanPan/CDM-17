@@ -39,7 +39,8 @@ Status: in-progress
   - [x] 生成 1k 节点数据集，自动化场景：基线渲染耗时占位（tooling/scripts/perf-layout.ts）。  
   - [x] WS 协同脚本：`tooling/tests/ws-layout-check.ts`（需先启动 API）验证 viewer 拒绝写入、editor 同步广播。  
   - [x] UI e2e 只读校验：`apps/web/tests/layout-readonly.spec.ts`（Playwright）。  
-  - [ ] e2e 校验选中保持、权限拒绝、协同一致性（完整链路待补）。
+  - [x] UI e2e 协同广播/权限拒绝：`apps/web/tests/layout-collab.spec.ts`。  
+  - [ ] e2e 校验选中保持等更细粒度交互（待补）。
 
 ## Dev Notes
 
