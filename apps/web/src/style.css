@@ -114,6 +114,30 @@ body {
   background: radial-gradient(circle at 20% 20%, #f8fafc, #fff);
 }
 
+.canvas-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.watermark {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(37, 99, 235, 0.08) 0,
+    rgba(37, 99, 235, 0.08) 20px,
+    transparent 20px,
+    transparent 80px
+  );
+  color: rgba(37, 99, 235, 0.35);
+  font-size: 32px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  text-transform: uppercase;
+}
+
 .section {
   display: flex;
   flex-direction: column;

@@ -224,7 +224,10 @@ function App() {
           <Section title="画布">
             <p>当前布局：{layoutModes.find((m) => m.key === state.mode)?.label}</p>
             <p>开关状态：{toggleList.map((t) => `${t.label}:${state.toggles?.[t.key] ? '开' : '关'}`).join(' / ')}</p>
-            <canvas ref={canvasRef} width={880} height={520} className="layout-canvas" />
+            <div className="canvas-wrapper">
+              <canvas ref={canvasRef} width={880} height={520} className="layout-canvas" />
+              {!isReadonly && <div className="watermark">CONFIDENTIAL · CDM</div>}
+            </div>
             <p>
               视口可见节点：{visibleCount}/{sampleNodeCount} · 缩放 {scale.toFixed(2)} · 偏移 ({offset.x.toFixed(0)},{' '}
               {offset.y.toFixed(0)})
