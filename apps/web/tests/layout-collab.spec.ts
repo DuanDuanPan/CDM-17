@@ -17,9 +17,7 @@ test('collaboration: editor broadcast to viewer', async () => {
   await modeButton.click();
   await expect(editor.getByText('当前布局：树')).toBeVisible();
 
-  // 等待 viewer 收到同步（poll DOM 文本）
-  await viewer.waitForTimeout(500); // 简易等待
-  await expect(viewer.getByText('当前布局：树')).toBeVisible();
+  await expect(viewer.getByText('当前布局：树')).toBeVisible({ timeout: 4000 });
 
   await browser.close();
 });

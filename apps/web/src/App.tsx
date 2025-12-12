@@ -46,8 +46,7 @@ function App() {
   const [visibleCount, setVisibleCount] = useState(0);
   const viewportHeight = 320;
   const rowHeight = 30;
-  const apiBase =
-    import.meta.env.VITE_API_BASE || (window as any).__CDM_API__ || `${window.location.origin.replace('5173', '4000')}`;
+  const apiBase = import.meta.env.VITE_API_BASE || (window as any).__CDM_API__ || window.location.origin;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const nodesRef = useRef<Array<{ id: number; x: number; y: number }>>([]);
   const edgesRef = useRef<Array<{ from: number; to: number }>>([]);

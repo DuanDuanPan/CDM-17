@@ -116,7 +116,7 @@ wss.on('connection', (ws, request) => {
   const roleParam = url.searchParams.get('role') ?? 'viewer';
   const token = url.searchParams.get('token');
   const role: 'editor' | 'viewer' =
-    roleParam === 'editor' && (!editorToken || token === editorToken) ? 'editor' : 'viewer';
+    roleParam === 'editor' && editorToken && token === editorToken ? 'editor' : 'viewer';
   const set = wsClients.get(graphId) ?? new Set<WebSocket>();
   set.add(ws);
   wsClients.set(graphId, set);
