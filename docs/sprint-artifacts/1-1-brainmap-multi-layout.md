@@ -24,7 +24,7 @@ Status: in-progress
   - [x] 定义布局状态 schema（布局类型、节点坐标/折叠、开关状态、版本号）。  
   - [x] 后端接口：GET/PUT 布局状态（走权限网关，写审计）。  
 - [ ] 前端布局引擎  
-  - [ ] 实现自由/树/逻辑的切换与状态恢复；吸附/对齐线/网格/距离线开关。  
+  - [x] 实现自由/树/逻辑的切换与状态恢复；吸附/对齐线/网格/距离线开关。  
   - [ ] 1k 节点渲染优化：视口分片、线裁剪、增量重绘。  
 - [ ] 协同与容错  
   - [ ] 切换/开关变更通过 WS 同步；断线重连后状态一致。  
@@ -68,3 +68,8 @@ Status: in-progress
  - packages/database/src/index.ts
  - packages/core-server/src/layout.ts
  - apps/api/src/index.ts
+ - packages/sdk/src/index.ts
+ - packages/core-client/src/index.ts
+ - apps/web/src/App.tsx
+ - apps/web/src/style.css
+ - apps/web/vite.config.ts
