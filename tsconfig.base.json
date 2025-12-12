@@ -20,7 +20,14 @@
       "@cdm/sdk": ["packages/sdk/src"],
       "@cdm/ui": ["packages/ui/src"],
       "@cdm/utils": ["packages/utils/src"],
-      "@cdm/database": ["packages/database/src"]
+      "@cdm/database": ["packages/database/src"],
+      "@cdm/plugin-permission": ["packages/plugins/plugin-permission/src"],
+      "@cdm/plugin-audit-log": ["packages/plugins/plugin-audit-log/src"],
+      "@cdm/plugin-notification": ["packages/plugins/plugin-notification/src"],
+      "@cdm/plugin-export-share": ["packages/plugins/plugin-export-share/src"],
+      "@cdm/plugin-template-ai": ["packages/plugins/plugin-template-ai/src"],
+      "@cdm/plugin-layout-free": ["packages/plugins/plugin-layout-free/src"],
+      "@cdm/preset-default": ["packages/preset-default/src"]
     }
   }
 }
