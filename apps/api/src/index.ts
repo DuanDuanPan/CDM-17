@@ -1,14 +1,17 @@
 import Fastify from 'fastify';
 import { createPluginRegistry } from '@cdm/core-server';
 import { createLayoutService } from '@cdm/core-server/src/layout';
-import { LayoutState, AuditEvent, PerfMetric } from '@cdm/types';
+import { LayoutState, AuditEvent, PerfMetric, VisitLog } from '@cdm/types';
+import { InMemoryGraphRepository } from '@cdm/database';
 import { loadPreset } from '@cdm/preset-default';
 
 const app = Fastify({ logger: true });
 const registry = loadPreset(createPluginRegistry());
-const layoutService = createLayoutService();
+const repo = new InMemoryGraphRepository();
+const layoutService = createLayoutService(repo);
 const auditEvents: AuditEvent[] = [];
 const metrics: PerfMetric[] = [];
+const visitLogs: VisitLog[] = [];
 
 const recordAudit = (evt: AuditEvent) => {
   const enriched = { ...evt, id: evt.id ?? `audit-${auditEvents.length + 1}` };
@@ -60,6 +63,14 @@ app.register(async (instance) => {
   });
 
   instance.get('/audit/events', async () => auditEvents);
+  instance.post<{ Body: VisitLog }>('/visits', async (req) => {
+    const log = { ...req.body, id: req.body.id ?? `visit-${visitLogs.length + 1}` };
+    visitLogs.push(log);
+    repo.logVisit(log);
+    return log;
+  });
+
+  instance.get('/visits', async () => visitLogs);
 
   instance.post<{ Body: PerfMetric }>('/metrics', async (req) => {
     const metric = req.body;

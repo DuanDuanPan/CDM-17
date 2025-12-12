@@ -19,4 +19,4 @@ export class LayoutService {
   }
 }
 
-export const createLayoutService = () => new LayoutService();
+export const createLayoutService = (repo?: InMemoryGraphRepository) => new LayoutService(repo ?? new InMemoryGraphRepository());
