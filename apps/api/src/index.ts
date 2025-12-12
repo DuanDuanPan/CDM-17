@@ -96,6 +96,23 @@ app.register(async (instance) => {
   });
 
   instance.get('/metrics', async () => metrics);
+
+  instance.get('/graph/:graphId', async (req) => {
+    const data = repo.getGraph((req.params as { graphId: string }).graphId) ?? { nodes: [], edges: [] };
+    return data;
+  });
+
+  instance.put<{ Params: { graphId: string }; Body: { nodes: unknown[]; edges: unknown[] } }>('/graph/:graphId', async (req) => {
+    repo.saveGraph(req.params.graphId, req.body.nodes as any[], req.body.edges as any[]);
+    recordAudit({
+      id: `audit-${auditEvents.length + 1}`,
+      actor: 'system',
+      action: 'graph-write',
+      target: req.params.graphId,
+      createdAt: new Date().toISOString(),
+    });
+    return { ok: true };
+  });
 });
 
 // WebSocket协同：ws://host:4000?graphId=demo-graph&role=editor

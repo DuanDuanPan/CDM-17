@@ -1,5 +1,5 @@
 import { Node, Edge, LayoutState, LayoutMode } from '@cdm/types';
-import { RealtimeClient, HttpClient, LayoutApi, TelemetryApi } from '@cdm/sdk';
+import { RealtimeClient, HttpClient, LayoutApi, TelemetryApi, GraphApi, GraphSnapshot } from '@cdm/sdk';
 
 export interface ViewState {
   nodes: Node[];
@@ -55,6 +55,7 @@ export class LayoutController {
   private state: LayoutControllerState;
   private api: LayoutApi;
   private telemetry: TelemetryApi;
+  private graphApi: GraphApi;
   private graphId: string;
   private channel?: BroadcastChannel;
   private onChange?: (state: LayoutControllerState) => void;
@@ -72,6 +73,7 @@ export class LayoutController {
     this.graphId = graphId;
     this.api = new LayoutApi(new HttpClient(apiBase));
     this.telemetry = new TelemetryApi(new HttpClient(apiBase));
+    this.graphApi = new GraphApi(new HttpClient(apiBase));
     this.state = { mode: 'free', toggles: defaultToggles, version: 0 };
     this.onChange = onChange;
     this.wsRole = wsRole;
@@ -129,6 +131,14 @@ export class LayoutController {
     this.state = { ...this.state, mode };
     this.broadcast();
     this.onChange?.(this.state);
+  }
+
+  async loadGraph(): Promise<GraphSnapshot> {
+    return this.graphApi.getGraph(this.graphId);
+  }
+
+  async saveGraph(snapshot: GraphSnapshot) {
+    return this.graphApi.saveGraph(this.graphId, snapshot);
   }
 
   toggle(flag: keyof LayoutToggles) {

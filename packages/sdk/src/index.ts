@@ -1,4 +1,5 @@
 import { LayoutState, PerfMetric } from '@cdm/types';
+import { Node, Edge } from '@cdm/types';
 
 export interface RequestOptions {
   headers?: Record<string, string>;
@@ -76,5 +77,22 @@ export class TelemetryApi {
       context: metric.context,
     };
     return this.http.post<PerfMetric>('/metrics', payload);
+  }
+}
+
+export interface GraphSnapshot {
+  nodes: Node[];
+  edges: Edge[];
+}
+
+export class GraphApi {
+  constructor(private http: HttpClient) {}
+
+  getGraph(graphId: string) {
+    return this.http.get<GraphSnapshot>(`/graph/${graphId}`);
+  }
+
+  saveGraph(graphId: string, snapshot: GraphSnapshot) {
+    return this.http.put<{ ok: boolean }>(`/graph/${graphId}`, snapshot);
   }
 }
