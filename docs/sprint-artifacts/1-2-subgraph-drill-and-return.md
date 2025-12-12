@@ -1,6 +1,6 @@
 # Story 1.2: subgraph-drill-and-return
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -19,8 +19,8 @@ Status: ready-for-dev
 
 ## Tasks / Subtasks
 
-- [ ] 交互与状态  
-  - [ ] 面包屑/返回控件；记录主图选中与视口状态，返回时恢复。  
+- [x] 交互与状态  
+  - [x] 面包屑/返回控件；记录主图选中与视口状态，返回时恢复（toolbar 下钻/返回，栈式保存 offset/scale/选中）。  
   - [ ] 下钻视图的数据装载与渲染（沿用布局/虚拟化策略）；支持撤销/重做。  
 - [ ] 数据与同步  
   - [ ] 子图编辑（节点/边/布局）写回主图存储；WS 广播同步主/子视图。  

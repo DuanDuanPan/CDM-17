@@ -78,6 +78,8 @@ export interface VisitLog {
   happenedAt: string;
   userAgent?: string;
   ip?: string;
+  graphId?: string;
+  action?: string;
 }
 
 export type LayoutMode = 'free' | 'tree' | 'logic';

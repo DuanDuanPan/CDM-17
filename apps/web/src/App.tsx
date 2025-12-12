@@ -25,7 +25,8 @@ const toggleList = [
 
 function App() {
   const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
-  const controller = useMemo(
+  const [graphId, setGraphId] = useState('demo-graph');
+  const [controller, setController] = useState<LayoutController>(
     () =>
       new LayoutController(
         'demo-graph',
@@ -34,8 +35,7 @@ function App() {
           setState({ ...s });
         },
         isReadonly ? 'viewer' : 'editor'
-      ),
-    [apiBase, isReadonly]
+      )
   );
   const [state, setState] = useState<LayoutControllerState>(controller.getState());
   const [lastSync, setLastSync] = useState<string>();
@@ -53,6 +53,7 @@ function App() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const ctxStack = useRef<Array<{ graphId: string; offset: { x: number; y: number }; scale: number; selectedId: number | null }>>([]);
 
   // 初始化数据集（节点/边）
   useEffect(() => {
@@ -132,6 +133,20 @@ function App() {
     controller.load().then(setState);
   }, [controller]);
 
+  useEffect(() => {
+    const c = new LayoutController(
+      graphId,
+      apiBase,
+      (s) => setState({ ...s }),
+      isReadonly ? 'viewer' : 'editor'
+    );
+    setController(c);
+    setSelectedId(null);
+    setOffset({ x: 0, y: 0 });
+    setScale(1);
+    c.load().then(setState);
+  }, [graphId, apiBase, isReadonly]);
+
   const handleMode = async (mode: 'free' | 'tree' | 'logic') => {
     if (isReadonly) return;
     controller.setMode(mode);
@@ -161,6 +176,38 @@ function App() {
   const handleSelect = (id: number) => {
     if (isReadonly) return;
     setSelectedId(id);
+  };
+
+  const logVisit = (action: string, node?: number) => {
+    fetch(`${apiBase}/visits`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        visitor: 'web-shell',
+        nodeId: node != null ? `node-${node}` : 'na',
+        graphId,
+        action,
+        happenedAt: new Date().toISOString(),
+      }),
+    }).catch(() => undefined);
+  };
+
+  const drill = () => {
+    if (selectedId == null || isReadonly) return;
+    ctxStack.current.push({ graphId, offset, scale, selectedId });
+    const nextId = `graph-${selectedId}`;
+    setGraphId(nextId);
+    logVisit('drill', selectedId);
+  };
+
+  const goBack = () => {
+    const prev = ctxStack.current.pop();
+    if (!prev) return;
+    setGraphId(prev.graphId);
+    setOffset(prev.offset);
+    setScale(prev.scale);
+    setSelectedId(prev.selectedId);
+    logVisit('return', prev.selectedId ?? undefined);
   };
 
   return (
@@ -214,6 +261,16 @@ function App() {
             缩小
           </button>
           <span className="toolbar-label">缩放 {scale.toFixed(2)}</span>
+        </div>
+        <div className="toolbar-group">
+          <span className="toolbar-label">下钻</span>
+          <button className="btn" onClick={drill} disabled={selectedId == null || isReadonly}>
+            下钻到选中
+          </button>
+          <button className="btn" onClick={goBack} disabled={ctxStack.current.length === 0}>
+            返回上级
+          </button>
+          <span className="toolbar-label">Graph: {graphId}</span>
         </div>
         <div className="toolbar-meta">
           <span>版本：{state.version}</span>
