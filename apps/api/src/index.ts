@@ -78,6 +78,12 @@ app.register(async (instance) => {
   });
 
   instance.get('/audit/events', async () => auditEvents);
+  instance.post<{ Body: AuditEvent }>('/audit/events', async (req) => {
+    const evt = { ...req.body, id: req.body.id ?? `audit-${auditEvents.length + 1}` };
+    auditEvents.push(evt);
+    appendJsonl(auditFile, evt);
+    return evt;
+  });
   instance.post<{ Body: VisitLog }>('/visits', async (req) => {
     const log = { ...req.body, id: req.body.id ?? `visit-${visitLogs.length + 1}` };
     visitLogs.push(log);
@@ -144,7 +150,12 @@ wss.on('connection', (ws, request) => {
 
   ws.on('message', (data) => {
     try {
-      const parsed = JSON.parse(data.toString()) as { type: string; state?: LayoutState; actor?: string };
+      const parsed = JSON.parse(data.toString()) as {
+        type: string;
+        state?: LayoutState;
+        snapshot?: { nodes: unknown[]; edges: unknown[] };
+        actor?: string;
+      };
       if (parsed.type === 'layout-update' && parsed.state) {
         if (role === 'viewer') {
           ws.send(JSON.stringify({ type: 'error', message: 'readonly client' }));
@@ -163,6 +174,26 @@ wss.on('connection', (ws, request) => {
         peers.forEach((peer) => {
           if (peer !== ws && peer.readyState === WebSocket.OPEN) {
             peer.send(JSON.stringify({ type: 'layout-sync', state: saved }));
+          }
+        });
+      }
+      if (parsed.type === 'graph-update' && parsed.snapshot) {
+        if (role === 'viewer') {
+          ws.send(JSON.stringify({ type: 'error', message: 'readonly client' }));
+          return;
+        }
+        repo.saveGraph(graphId, parsed.snapshot.nodes as any[], parsed.snapshot.edges as any[]);
+        recordAudit({
+          id: `audit-${auditEvents.length + 1}`,
+          actor: parsed.actor ?? 'ws-client',
+          action: 'graph-write-ws',
+          target: graphId,
+          createdAt: new Date().toISOString(),
+        });
+        const peers = wsClients.get(graphId) ?? new Set<WebSocket>();
+        peers.forEach((peer) => {
+          if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+            peer.send(JSON.stringify({ type: 'graph-sync', snapshot: parsed.snapshot }));
           }
         });
       }

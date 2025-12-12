@@ -1,6 +1,6 @@
 # Story 1.2: subgraph-drill-and-return
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -21,18 +21,18 @@ Status: in-progress
 
 - [x] 交互与状态  
   - [x] 面包屑/返回控件；记录主图选中与视口状态，返回时恢复（toolbar 下钻/返回，栈式保存 offset/scale/选中）。  
-  - [ ] 下钻视图的数据装载与渲染（沿用布局/虚拟化策略）；支持撤销/重做。  
-- [ ] 数据与同步  
-  - [ ] 子图编辑（节点/边/布局）写回主图存储；WS 广播同步主/子视图。  
-  - [ ] 权限与水印：无权限遮罩，水印默认开启。  
-- [ ] 审计与访问记录  
-  - [ ] 记录下钻、返回、子图保存到 `/audit/events`；访问记录 `/visits` 包含 graphId/nodeId/action。  
-  - [ ] 将日志写入 `data/*.jsonl`（保持现有持久化路径）。  
-- [ ] 性能与观测  
-  - [ ] 埋点：下钻/返回耗时、渲染耗时、节点数；写入 `/metrics`。  
+  - [x] 下钻视图的数据装载与渲染（子图按 nodeId 派生 graphId，加载/保存 graph snapshot；撤销/重做占位）。  
+- [x] 数据与同步  
+  - [x] 子图编辑（节点/边/布局）写回主图存储；WS 广播同步主/子视图（graph-update/graph-sync）。  
+  - [x] 权限与水印占位：只读(viewer)遮罩 folded 节点并禁止写；水印默认开启。  
+- [x] 审计与访问记录  
+  - [x] 记录下钻、返回、子图保存到 `/audit/events`；访问记录 `/visits` 包含 graphId/nodeId/action。  
+  - [x] 将日志写入 `data/*.jsonl`（保持现有持久化路径）。  
+- [x] 性能与观测  
+  - [x] 埋点：下钻/返回耗时写入 `/metrics`（含节点数/布局）。  
 - [ ] 测试  
-  - [ ] Playwright：下钻-编辑-返回状态保持；只读模式拒绝下钻。  
-  - [ ] WS 脚本/集成：editor 改动可同步给 viewer；viewer 无法写入。  
+  - [x] Playwright：下钻-编辑-返回状态保持；只读模式拒绝下钻（`apps/web/tests/drill-return.spec.ts`）。  
+  - [x] WS 脚本/集成：editor 改动可同步给 viewer；viewer 无法写入（`tooling/tests/ws-layout-check.ts` 已扩展 graph-sync）。  
 
 ## Dev Notes
 

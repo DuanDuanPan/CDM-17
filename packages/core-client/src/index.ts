@@ -59,6 +59,7 @@ export class LayoutController {
   private graphId: string;
   private channel?: BroadcastChannel;
   private onChange?: (state: LayoutControllerState) => void;
+  private onGraphSync?: (snapshot: GraphSnapshot) => void;
   private ws?: WebSocket;
   private wsRole: 'editor' | 'viewer';
 
@@ -68,7 +69,8 @@ export class LayoutController {
       ? (window as any).__CDM_API__ ?? 'http://localhost:4000'
       : 'http://localhost:4000',
     onChange?: (s: LayoutControllerState) => void,
-    wsRole: 'editor' | 'viewer' = 'editor'
+    wsRole: 'editor' | 'viewer' = 'editor',
+    onGraphSync?: (snapshot: GraphSnapshot) => void
   ) {
     this.graphId = graphId;
     this.api = new LayoutApi(new HttpClient(apiBase));
@@ -77,6 +79,7 @@ export class LayoutController {
     this.state = { mode: 'free', toggles: defaultToggles, version: 0 };
     this.onChange = onChange;
     this.wsRole = wsRole;
+    this.onGraphSync = onGraphSync;
     if (typeof BroadcastChannel !== 'undefined') {
       this.channel = new BroadcastChannel(`layout-${graphId}`);
       this.channel.addEventListener('message', (ev) => {
@@ -87,7 +90,9 @@ export class LayoutController {
       });
     }
     if (typeof WebSocket !== 'undefined') {
-      const wsUrl = `${apiBase.replace('http', 'ws')}/ws?graphId=${graphId}&role=${wsRole}`;
+      const token =
+        typeof window !== 'undefined' ? (window as any).__CDM_WS_TOKEN__ : undefined;
+      const wsUrl = `${apiBase.replace('http', 'ws')}/ws?graphId=${graphId}&role=${wsRole}${token ? `&token=${token}` : ''}`;
       this.ws = new WebSocket(wsUrl);
       this.ws.addEventListener('message', (ev) => {
         try {
@@ -96,6 +101,9 @@ export class LayoutController {
             this.state = { ...this.state, ...msg.state, saving: false, error: undefined };
             this.broadcast();
             this.onChange?.(this.state);
+          }
+          if (msg.type === 'graph-sync' && msg.snapshot) {
+            this.onGraphSync?.(msg.snapshot as GraphSnapshot);
           }
         } catch {
           // ignore malformed
@@ -139,6 +147,12 @@ export class LayoutController {
 
   async saveGraph(snapshot: GraphSnapshot) {
     return this.graphApi.saveGraph(this.graphId, snapshot);
+  }
+
+  sendGraphUpdate(snapshot: GraphSnapshot, actor = 'system') {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'graph-update', snapshot, actor }));
+    }
   }
 
   toggle(flag: keyof LayoutToggles) {

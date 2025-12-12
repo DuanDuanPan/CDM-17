@@ -18,7 +18,7 @@ async function waitForHealth(url = 'http://localhost:4000/health', retries = 10,
 async function globalSetup() {
   // Start API server if not already running
   apiProcess = exec('pnpm --filter @cdm/api dev --host 0.0.0.0 --port 4000', {
-    env: { ...process.env },
+    env: { ...process.env, WS_EDITOR_TOKEN: process.env.WS_EDITOR_TOKEN || 'test-token' },
   });
   await waitForHealth();
 }

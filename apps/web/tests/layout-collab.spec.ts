@@ -5,6 +5,9 @@ import { test, expect, chromium } from '@playwright/test';
 test('collaboration: editor broadcast to viewer', async () => {
   const browser = await chromium.launch({ headless: true });
   const editorCtx = await browser.newContext();
+  await editorCtx.addInitScript(() => {
+    (window as any).__CDM_WS_TOKEN__ = 'test-token';
+  });
   const viewerCtx = await browser.newContext();
   const editor = await editorCtx.newPage();
   const viewer = await viewerCtx.newPage();

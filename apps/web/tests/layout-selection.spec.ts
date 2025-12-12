@@ -6,7 +6,7 @@ test('selection persists after scroll', async ({ page }) => {
   await page.goto('/');
   const firstRow = page.getByText('节点 #0');
   await firstRow.click();
-  await expect(page.getByText('当前选中节点：0')).toBeVisible();
+  await expect(page.getByText('当前选中节点：node-0')).toBeVisible();
 
   // 向下滚动，再回到顶部，选中应保持
   await page.locator('.virtual-list').evaluate((el) => {
@@ -16,7 +16,7 @@ test('selection persists after scroll', async ({ page }) => {
   await page.locator('.virtual-list').evaluate((el) => {
     el.scrollTop = 0;
   });
-  await expect(page.getByText('当前选中节点：0')).toBeVisible();
+  await expect(page.getByText('当前选中节点：node-0')).toBeVisible();
 });
 
 test('readonly cannot change selection', async ({ page }) => {

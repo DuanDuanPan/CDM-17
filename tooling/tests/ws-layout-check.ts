@@ -8,6 +8,7 @@
  */
 import WebSocket from 'ws';
 
+const token = process.env.WS_EDITOR_TOKEN || 'test-token';
 const base = 'ws://localhost:4000/ws?graphId=demo-graph';
 
 const waitMessage = (ws: WebSocket, timeout = 2000) =>
@@ -32,7 +33,7 @@ async function main() {
   const viewerResp = await waitMessage(viewer);
   console.log('viewer response:', viewerResp);
 
-  const editor = new WebSocket(`${base}&role=editor`);
+  const editor = new WebSocket(`${base}&role=editor&token=${token}`);
   await new Promise((res) => editor.once('open', res));
 
   const syncPromise = waitMessage(viewer);
@@ -46,6 +47,17 @@ async function main() {
 
   const syncMsg = await syncPromise;
   console.log('viewer sync:', syncMsg);
+
+  const graphSyncPromise = waitMessage(viewer);
+  editor.send(
+    JSON.stringify({
+      type: 'graph-update',
+      actor: 'editor',
+      snapshot: { nodes: [{ id: 'node-x' }], edges: [] },
+    })
+  );
+  const graphSyncMsg = await graphSyncPromise;
+  console.log('viewer graph sync:', graphSyncMsg);
 
   viewer.close();
   editor.close();

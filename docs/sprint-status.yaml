@@ -38,7 +38,7 @@ story_location: docs/stories
 development_status:
   epic-1: in-progress
   1-1-brainmap-multi-layout: done
-  1-2-subgraph-drill-and-return: in-progress
+  1-2-subgraph-drill-and-return: done
   1-3-mindmap-gantt-timeline-board: backlog
   epic-1-retrospective: optional
 

@@ -24,6 +24,19 @@ const toggleList = [
   { key: 'distance', label: '距离线' },
 ] as const;
 
+type PositionedNode = {
+  id: string;
+  label: string;
+  kind: 'idea';
+  createdAt: string;
+  updatedAt: string;
+  x: number;
+  y: number;
+  folded?: boolean;
+};
+
+type PositionedEdge = { from: string; to: string };
+
 function App() {
   const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
   const [graphId, setGraphId] = useState('demo-graph');
@@ -49,38 +62,80 @@ function App() {
   const rowHeight = 30;
   const apiBase = import.meta.env.VITE_API_BASE || (window as any).__CDM_API__ || window.location.origin;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const nodesRef = useRef<Array<{ id: number; x: number; y: number }>>([]);
-  const edgesRef = useRef<Array<{ from: number; to: number }>>([]);
+  const nodesRef = useRef<PositionedNode[]>([]);
+  const edgesRef = useRef<PositionedEdge[]>([]);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const ctxStack = useRef<Array<{ graphId: string; offset: { x: number; y: number }; scale: number; selectedId: number | null }>>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const ctxStack = useRef<
+    Array<{ graphId: string; offset: { x: number; y: number }; scale: number; selectedId: string | null }>
+  >([]);
   const drillStack = useRef<DrillContext[]>([]);
 
-  // 初始化数据集（节点/边）
+  const seedGraphSnapshot = (count: number) => {
+    const now = new Date().toISOString();
+    const nodes: PositionedNode[] = Array.from({ length: count }, (_, i) => ({
+      id: `node-${i}`,
+      label: `节点 ${i}`,
+      kind: 'idea',
+      createdAt: now,
+      updatedAt: now,
+      x: Math.random() * 2000 - 500,
+      y: Math.random() * 2000 - 500,
+      folded: Math.random() > 0.7,
+    }));
+    const edges: PositionedEdge[] = Array.from({ length: count - 1 }, (_, i) => ({
+      from: `node-${i}`,
+      to: `node-${i + 1}`,
+    }));
+    return { nodes, edges };
+  };
+
+  const loadGraphSnapshot = async (id: string) => {
+    const res = await fetch(`${apiBase}/graph/${id}`);
+    return (await res.json()) as { nodes: PositionedNode[]; edges: PositionedEdge[] };
+  };
+
+  const saveGraphSnapshot = async (id: string, snapshot: { nodes: PositionedNode[]; edges: PositionedEdge[] }) => {
+    await fetch(`${apiBase}/graph/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snapshot),
+    });
+  };
+
+  const refreshVisible = (nodes = nodesRef.current) => {
+    const start = Math.floor(scrollTop / rowHeight);
+    const end = Math.min(nodes.length, start + Math.ceil(viewportHeight / rowHeight) + 10);
+    setVisibleNodes(nodes.slice(start, end));
+  };
+
+  // 初始化/加载当前 graph 数据
   useEffect(() => {
-    if (nodesRef.current.length === 0) {
-      nodesRef.current = Array.from({ length: sampleNodeCount }, (_, i) => ({
-        id: i,
-        x: Math.random() * 2000 - 500,
-        y: Math.random() * 2000 - 500,
-      }));
-      edgesRef.current = Array.from({ length: sampleNodeCount - 1 }, (_, i) => ({
-        from: i,
-        to: i + 1,
-      }));
-    }
-  }, [sampleNodeCount]);
+    let cancelled = false;
+    const init = async () => {
+      const snap = await loadGraphSnapshot(graphId);
+      if (!snap.nodes || snap.nodes.length === 0) {
+        const seeded = seedGraphSnapshot(sampleNodeCount);
+        nodesRef.current = seeded.nodes;
+        edgesRef.current = seeded.edges;
+        await saveGraphSnapshot(graphId, seeded);
+      } else {
+        nodesRef.current = snap.nodes;
+        edgesRef.current = snap.edges;
+      }
+      if (!cancelled) refreshVisible(nodesRef.current);
+    };
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [graphId, apiBase, sampleNodeCount]);
 
   // 虚拟列表视口
   useEffect(() => {
-    const updateVisible = () => {
-      const start = Math.floor(scrollTop / rowHeight);
-      const end = Math.min(sampleNodeCount, start + Math.ceil(viewportHeight / rowHeight) + 10);
-      setVisibleNodes(nodesRef.current.slice(start, end));
-    };
-    updateVisible();
-  }, [scrollTop, sampleNodeCount, rowHeight, viewportHeight]);
+    refreshVisible();
+  }, [scrollTop, rowHeight, viewportHeight, graphId]);
 
   // 画布渲染（视口裁剪 + 线裁剪）
   useEffect(() => {
@@ -103,20 +158,22 @@ function App() {
       );
       const visibleIds = new Set(visible.map((n) => n.id));
       setVisibleCount(visible.length);
+      const nodeById = new Map(nodesRef.current.map((n) => [n.id, n]));
       ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 1;
       edgesRef.current.forEach((e) => {
         if (!visibleIds.has(e.from) || !visibleIds.has(e.to)) return;
-        const from = nodesRef.current[e.from];
-        const to = nodesRef.current[e.to];
+        const from = nodeById.get(e.from);
+        const to = nodeById.get(e.to);
+        if (!from || !to) return;
         ctx.beginPath();
         ctx.moveTo(from.x, from.y);
         ctx.lineTo(to.x, to.y);
         ctx.stroke();
       });
 
-      ctx.fillStyle = '#2563eb';
       visible.forEach((n) => {
+        ctx.fillStyle = isReadonly && n.folded ? '#94a3b8' : '#2563eb';
         ctx.beginPath();
         ctx.arc(n.x, n.y, 4, 0, Math.PI * 2);
         ctx.fill();
@@ -129,18 +186,19 @@ function App() {
     };
     raf = requestAnimationFrame(render);
     return () => cancelAnimationFrame(raf);
-  }, [offset, scale]);
-
-  useEffect(() => {
-    controller.load().then(setState);
-  }, [controller]);
+  }, [offset, scale, isReadonly]);
 
   useEffect(() => {
     const c = new LayoutController(
       graphId,
       apiBase,
       (s) => setState({ ...s }),
-      isReadonly ? 'viewer' : 'editor'
+      isReadonly ? 'viewer' : 'editor',
+      (snap) => {
+        nodesRef.current = (snap.nodes ?? []) as PositionedNode[];
+        edgesRef.current = (snap.edges ?? []) as PositionedEdge[];
+        refreshVisible(nodesRef.current);
+      }
     );
     setController(c);
     setSelectedId(null);
@@ -175,18 +233,18 @@ function App() {
     setScale((s) => Math.max(0.4, Math.min(2, s + delta)));
   };
 
-  const handleSelect = (id: number) => {
+  const handleSelect = (id: string) => {
     if (isReadonly) return;
     setSelectedId(id);
   };
 
-  const logVisit = (action: string, node?: number) => {
+  const logVisit = (action: string, nodeId?: string) => {
     fetch(`${apiBase}/visits`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         visitor: 'web-shell',
-        nodeId: node != null ? `node-${node}` : 'na',
+        nodeId: nodeId ?? 'na',
         graphId,
         action,
         happenedAt: new Date().toISOString(),
@@ -194,24 +252,97 @@ function App() {
     }).catch(() => undefined);
   };
 
-  const drill = () => {
-    if (selectedId == null || isReadonly) return;
-    ctxStack.current.push({ graphId, offset, scale, selectedId });
-    drillStack.current.push({ graphId, parentGraphId: graphId, nodeId: `node-${selectedId}` });
-    const nextId = `graph-${selectedId}`;
-    setGraphId(nextId);
-    logVisit('drill', selectedId);
+  const postMetric = (name: string, value: number, context?: Record<string, unknown>) => {
+    fetch(`${apiBase}/metrics`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: `metric-${Date.now()}`,
+        name,
+        value,
+        unit: 'ms',
+        createdAt: new Date().toISOString(),
+        context,
+      }),
+    }).catch(() => undefined);
   };
 
-  const goBack = () => {
+  const postAudit = (action: string, target: string, metadata?: Record<string, unknown>) => {
+    fetch(`${apiBase}/audit/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actor: 'web-shell',
+        action,
+        target,
+        createdAt: new Date().toISOString(),
+        metadata,
+      }),
+    }).catch(() => undefined);
+  };
+
+  const drill = async () => {
+    if (!selectedId || isReadonly) return;
+    const startTs = performance.now();
+    ctxStack.current.push({ graphId, offset, scale, selectedId });
+    const idx = Number(selectedId.split('-')[1] ?? 0);
+    const nextId = `graph-${idx}`;
+
+    const existing = await loadGraphSnapshot(nextId);
+    if (!existing.nodes || existing.nodes.length === 0) {
+      const startIndex = idx;
+      const endIndex = Math.min(nodesRef.current.length, startIndex + 50);
+      const subsetNodes = nodesRef.current.slice(startIndex, endIndex);
+      const subsetIds = new Set(subsetNodes.map((n) => n.id));
+      const subsetEdges = edgesRef.current.filter((e) => subsetIds.has(e.from) && subsetIds.has(e.to));
+      await saveGraphSnapshot(nextId, { nodes: subsetNodes, edges: subsetEdges });
+    }
+
+    drillStack.current.push({ graphId: nextId, parentGraphId: graphId, nodeId: selectedId });
+    setGraphId(nextId);
+    logVisit('drill', selectedId);
+    postAudit('drill', nextId, { parentGraphId: graphId, nodeId: selectedId });
+    postMetric('drill.duration', performance.now() - startTs, { from: graphId, to: nextId, nodeId: selectedId });
+  };
+
+  const goBack = async () => {
     const prev = ctxStack.current.pop();
     if (!prev) return;
+    const startTs = performance.now();
+    const childId = graphId;
+    const childSnap = await loadGraphSnapshot(childId);
+    const parentSnap = await loadGraphSnapshot(prev.graphId);
+
+    if (childSnap.nodes && parentSnap.nodes) {
+      const childById = new Map(childSnap.nodes.map((n) => [n.id, n]));
+      const mergedNodes = parentSnap.nodes.map((n) => {
+        const child = childById.get(n.id);
+        return child ? { ...n, x: child.x, y: child.y, updatedAt: new Date().toISOString() } : n;
+      });
+      await saveGraphSnapshot(prev.graphId, { nodes: mergedNodes, edges: parentSnap.edges ?? [] });
+    }
+
     setGraphId(prev.graphId);
     setOffset(prev.offset);
     setScale(prev.scale);
     setSelectedId(prev.selectedId);
     logVisit('return', prev.selectedId ?? undefined);
+    postAudit('return', prev.graphId, { from: childId, nodeId: prev.selectedId });
+    postMetric('return.duration', performance.now() - startTs, { from: childId, to: prev.graphId });
     drillStack.current.pop();
+  };
+
+  const nudgeSelected = async (dx = 20, dy = 20) => {
+    if (!selectedId || isReadonly) return;
+    const updated = nodesRef.current.map((n) =>
+      n.id === selectedId ? { ...n, x: n.x + dx, y: n.y + dy, updatedAt: new Date().toISOString() } : n
+    );
+    nodesRef.current = updated;
+    await saveGraphSnapshot(graphId, { nodes: updated, edges: edgesRef.current });
+    controller.sendGraphUpdate({ nodes: updated, edges: edgesRef.current });
+    refreshVisible(updated);
+    logVisit('edit', selectedId);
+    postAudit('subgraph-edit', graphId, { nodeId: selectedId });
   };
 
   return (
@@ -271,6 +402,9 @@ function App() {
           <button className="btn" onClick={drill} disabled={selectedId == null || isReadonly}>
             下钻到选中
           </button>
+          <button className="btn" onClick={() => nudgeSelected()} disabled={selectedId == null || isReadonly}>
+            移动选中
+          </button>
           <button className="btn" onClick={goBack} disabled={ctxStack.current.length === 0}>
             返回上级
           </button>
@@ -293,7 +427,7 @@ function App() {
             <p>开关状态：{toggleList.map((t) => `${t.label}:${state.toggles?.[t.key] ? '开' : '关'}`).join(' / ')}</p>
             <div className="canvas-wrapper">
               <canvas ref={canvasRef} width={880} height={520} className="layout-canvas" />
-              {!isReadonly && <div className="watermark">CONFIDENTIAL · CDM</div>}
+              <div className="watermark">CONFIDENTIAL · CDM</div>
             </div>
             <p>
               视口可见节点：{visibleCount}/{sampleNodeCount} · 缩放 {scale.toFixed(2)} · 偏移 ({offset.x.toFixed(0)},{' '}
@@ -340,18 +474,22 @@ function App() {
             </button>
           </div>
             <div className="virtual-list" onScroll={(e) => setScrollTop((e.target as HTMLDivElement).scrollTop)}>
-              {visibleNodes.map((n) => (
-                <div
-                  key={n.id}
-                  className={`virtual-row ${selectedId === n.id ? 'selected' : ''}`}
-                  style={{ transform: `translateY(${n.id * rowHeight}px)` }}
-                  onClick={() => handleSelect(n.id)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  节点 #{n.id} — x:{n.x.toFixed(1)} y:{n.y.toFixed(1)}
-                </div>
-              ))}
+              {visibleNodes.map((n) => {
+                const idx = Number(n.id.split('-')[1] ?? 0);
+                const masked = isReadonly && n.folded;
+                return (
+                  <div
+                    key={n.id}
+                    className={`virtual-row ${selectedId === n.id ? 'selected' : ''}`}
+                    style={{ transform: `translateY(${idx * rowHeight}px)` }}
+                    onClick={() => handleSelect(n.id)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    节点 #{idx} — {masked ? '（遮罩）' : n.label} x:{n.x.toFixed(1)} y:{n.y.toFixed(1)}
+                  </div>
+                );
+              })}
               <div style={{ height: sampleNodeCount * rowHeight }} aria-hidden />
             </div>
             <p>当前选中节点：{selectedId ?? '无'}</p>
