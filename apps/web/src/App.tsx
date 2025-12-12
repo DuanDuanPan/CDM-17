@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import './style.css';
 import { LayoutController, LayoutControllerState } from '@cdm/core-client';
 import { useRef } from 'react';
+import { DrillContext } from '@cdm/types';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="section">
@@ -54,6 +55,7 @@ function App() {
   const [scale, setScale] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const ctxStack = useRef<Array<{ graphId: string; offset: { x: number; y: number }; scale: number; selectedId: number | null }>>([]);
+  const drillStack = useRef<DrillContext[]>([]);
 
   // 初始化数据集（节点/边）
   useEffect(() => {
@@ -195,6 +197,7 @@ function App() {
   const drill = () => {
     if (selectedId == null || isReadonly) return;
     ctxStack.current.push({ graphId, offset, scale, selectedId });
+    drillStack.current.push({ graphId, parentGraphId: graphId, nodeId: `node-${selectedId}` });
     const nextId = `graph-${selectedId}`;
     setGraphId(nextId);
     logVisit('drill', selectedId);
@@ -208,6 +211,7 @@ function App() {
     setScale(prev.scale);
     setSelectedId(prev.selectedId);
     logVisit('return', prev.selectedId ?? undefined);
+    drillStack.current.pop();
   };
 
   return (

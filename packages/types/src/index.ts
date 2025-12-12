@@ -82,6 +82,14 @@ export interface VisitLog {
   action?: string;
 }
 
+export interface DrillContext {
+  graphId: string;
+  parentGraphId?: string;
+  nodeId: string;
+  label?: string;
+  payload?: Record<string, unknown>;
+}
+
 export type LayoutMode = 'free' | 'tree' | 'logic';
 
 export interface LayoutState {
