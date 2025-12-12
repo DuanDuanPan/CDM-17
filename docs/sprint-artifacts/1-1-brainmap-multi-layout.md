@@ -1,6 +1,6 @@
 # Story 1.1: brainmap-multi-layout
 
-Status: drafted
+Status: ready-for-dev
 
 ## Story
 
