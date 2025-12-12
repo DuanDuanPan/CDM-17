@@ -37,7 +37,8 @@ Status: in-progress
   - [x] 审计/访问/指标持久化：写入 `data/audit-log.jsonl`、`data/visit-log.jsonl`、`data/metrics-log.jsonl`。  
 - [ ] 测试  
   - [x] 生成 1k 节点数据集，自动化场景：基线渲染耗时占位（tooling/scripts/perf-layout.ts）。  
-  - [ ] e2e 校验选中保持、权限拒绝、协同一致性。
+  - [x] WS 协同脚本：`tooling/tests/ws-layout-check.ts`（需先启动 API）验证 viewer 拒绝写入、editor 同步广播。  
+  - [ ] e2e 校验选中保持、权限拒绝、协同一致性（UI 自动化待补）。
 
 ## Dev Notes
 
