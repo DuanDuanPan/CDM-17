@@ -23,25 +23,37 @@ const toggleList = [
 ] as const;
 
 function App() {
-  const controller = useMemo(() => new LayoutController('demo-graph'), []);
+  const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
+  const controller = useMemo(
+    () =>
+      new LayoutController('demo-graph', 'http://localhost:4000', (s) => {
+        setState({ ...s });
+      }),
+    []
+  );
   const [state, setState] = useState<LayoutControllerState>(controller.getState());
+  const [lastSync, setLastSync] = useState<string>();
 
   useEffect(() => {
     controller.load().then(setState);
   }, [controller]);
 
   const handleMode = async (mode: 'free' | 'tree' | 'logic') => {
+    if (isReadonly) return;
     controller.setMode(mode);
     setState({ ...controller.getState(), mode });
     const saved = await controller.save('web-shell');
     setState({ ...saved });
+    setLastSync(new Date().toLocaleTimeString());
   };
 
   const handleToggle = async (key: keyof LayoutControllerState['toggles']) => {
+    if (isReadonly) return;
     controller.toggle(key);
     setState({ ...controller.getState() });
     const saved = await controller.save('web-shell');
     setState({ ...saved });
+    setLastSync(new Date().toLocaleTimeString());
   };
 
   return (
@@ -55,6 +67,7 @@ function App() {
               key={m.key}
               className={state.mode === m.key ? 'btn active' : 'btn'}
               onClick={() => handleMode(m.key)}
+              disabled={isReadonly}
             >
               {m.label}
             </button>
@@ -67,6 +80,7 @@ function App() {
               key={t.key}
               className={state.toggles?.[t.key] ? 'btn active' : 'btn'}
               onClick={() => handleToggle(t.key)}
+              disabled={isReadonly}
             >
               {t.label}
             </button>
@@ -75,6 +89,8 @@ function App() {
         <div className="toolbar-meta">
           <span>版本：{state.version}</span>
           {state.updatedAt && <span>更新：{new Date(state.updatedAt).toLocaleTimeString()}</span>}
+          {lastSync && <span>同步：{lastSync}</span>}
+          {isReadonly && <span className="warning">只读模式</span>}
           {state.saving && <span>保存中…</span>}
           {state.error && <span className="error">错误：{state.error}</span>}
         </div>

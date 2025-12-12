@@ -83,6 +83,10 @@ body {
   color: #b91c1c;
 }
 
+.warning {
+  color: #b45309;
+}
+
 .layout {
   flex: 1;
   display: grid;

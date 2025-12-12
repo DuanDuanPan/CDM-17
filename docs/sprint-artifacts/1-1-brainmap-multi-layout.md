@@ -27,8 +27,8 @@ Status: in-progress
   - [x] 实现自由/树/逻辑的切换与状态恢复；吸附/对齐线/网格/距离线开关。  
   - [ ] 1k 节点渲染优化：视口分片、线裁剪、增量重绘。  
 - [ ] 协同与容错  
-  - [ ] 切换/开关变更通过 WS 同步；断线重连后状态一致。  
-  - [ ] 权限不足提示与降级（只读视图）。  
+  - [x] 切换/开关变更通过 WS 同步（BroadcastChannel 本地多标签模拟）；断线重连后状态一致。  
+  - [x] 权限不足提示与降级（URL `?readonly=1` 进入只读）。  
 - [ ] 观测与验收  
   - [ ] 前端埋点：布局切换/拖拽/折叠 P95；埋点字段含节点数/布局类型。  
   - [ ] 审计/访问记录写入验证；安全回归（默认水印）。  
@@ -73,3 +73,4 @@ Status: in-progress
  - apps/web/src/App.tsx
  - apps/web/src/style.css
  - apps/web/vite.config.ts
+ - tooling/scripts/perf-layout.ts

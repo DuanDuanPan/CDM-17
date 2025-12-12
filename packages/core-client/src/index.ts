@@ -55,11 +55,23 @@ export class LayoutController {
   private state: LayoutControllerState;
   private api: LayoutApi;
   private graphId: string;
+  private channel?: BroadcastChannel;
+  private onChange?: (state: LayoutControllerState) => void;
 
-  constructor(graphId: string, apiBase = 'http://localhost:4000') {
+  constructor(graphId: string, apiBase = 'http://localhost:4000', onChange?: (s: LayoutControllerState) => void) {
     this.graphId = graphId;
     this.api = new LayoutApi(new HttpClient(apiBase));
     this.state = { mode: 'free', toggles: defaultToggles, version: 0 };
+    this.onChange = onChange;
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.channel = new BroadcastChannel(`layout-${graphId}`);
+      this.channel.addEventListener('message', (ev) => {
+        const incoming = ev.data as LayoutControllerState;
+        if (!incoming?.version || incoming.version <= this.state.version) return;
+        this.state = { ...incoming, saving: false, error: undefined };
+        this.onChange?.(this.state);
+      });
+    }
   }
 
   getState() {
@@ -76,6 +88,8 @@ export class LayoutController {
         version: remote.version,
         updatedAt: remote.updatedAt,
       };
+      this.broadcast();
+      this.onChange?.(this.state);
       return this.state;
     } catch (err) {
       this.state = { ...this.state, error: (err as Error).message };
@@ -85,6 +99,8 @@ export class LayoutController {
 
   setMode(mode: LayoutMode) {
     this.state = { ...this.state, mode };
+    this.broadcast();
+    this.onChange?.(this.state);
   }
 
   toggle(flag: keyof LayoutToggles) {
@@ -92,10 +108,14 @@ export class LayoutController {
       ...this.state,
       toggles: { ...this.state.toggles, [flag]: !this.state.toggles[flag] },
     };
+    this.broadcast();
+    this.onChange?.(this.state);
   }
 
   async save(updatedBy = 'system') {
     this.state = { ...this.state, saving: true, error: undefined };
+    this.broadcast();
+    this.onChange?.(this.state);
     try {
       const saved = await this.api.saveLayout(this.graphId, {
         mode: this.state.mode,
@@ -112,10 +132,18 @@ export class LayoutController {
         updatedAt: saved.updatedAt,
         saving: false,
       };
+      this.broadcast();
+      this.onChange?.(this.state);
       return this.state;
     } catch (err) {
       this.state = { ...this.state, saving: false, error: (err as Error).message };
       return this.state;
+    }
+  }
+
+  private broadcast() {
+    if (this.channel) {
+      this.channel.postMessage({ ...this.state });
     }
   }
 }
