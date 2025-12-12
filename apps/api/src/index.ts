@@ -3,6 +3,7 @@ import { createPluginRegistry } from '@cdm/core-server';
 import { createLayoutService } from '@cdm/core-server/src/layout';
 import { LayoutState, AuditEvent, PerfMetric, VisitLog } from '@cdm/types';
 import { InMemoryGraphRepository } from '@cdm/database';
+import { WebSocketServer, WebSocket } from 'ws';
 import { loadPreset } from '@cdm/preset-default';
 
 const app = Fastify({ logger: true });
@@ -12,6 +13,7 @@ const layoutService = createLayoutService(repo);
 const auditEvents: AuditEvent[] = [];
 const metrics: PerfMetric[] = [];
 const visitLogs: VisitLog[] = [];
+const wsClients = new Map<string, Set<WebSocket>>(); // graphId -> clients
 
 const recordAudit = (evt: AuditEvent) => {
   const enriched = { ...evt, id: evt.id ?? `audit-${auditEvents.length + 1}` };
@@ -79,6 +81,59 @@ app.register(async (instance) => {
   });
 
   instance.get('/metrics', async () => metrics);
+});
+
+// WebSocket协同：ws://host:4000?graphId=demo-graph&role=editor
+const wss = new WebSocketServer({ noServer: true });
+
+app.server.on('upgrade', (request, socket, head) => {
+  const url = new URL(request.url ?? '', `http://${request.headers.host}`);
+  if (url.pathname !== '/ws') return;
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+
+wss.on('connection', (ws, request) => {
+  const url = new URL(request.url ?? '', `http://${request.headers.host}`);
+  const graphId = url.searchParams.get('graphId') ?? 'default';
+  const role = url.searchParams.get('role') ?? 'editor'; // editor/viewer
+  const set = wsClients.get(graphId) ?? new Set<WebSocket>();
+  set.add(ws);
+  wsClients.set(graphId, set);
+
+  ws.on('close', () => {
+    set.delete(ws);
+  });
+
+  ws.on('message', (data) => {
+    try {
+      const parsed = JSON.parse(data.toString()) as { type: string; state?: LayoutState; actor?: string };
+      if (parsed.type === 'layout-update' && parsed.state) {
+        if (role === 'viewer') {
+          ws.send(JSON.stringify({ type: 'error', message: 'readonly client' }));
+          return;
+        }
+        const saved = layoutService.saveLayout(parsed.state);
+        recordAudit({
+          id: `audit-${auditEvents.length + 1}`,
+          actor: parsed.actor ?? 'ws-client',
+          action: 'layout-write-ws',
+          target: saved.graphId,
+          createdAt: new Date().toISOString(),
+          metadata: { mode: saved.mode, version: saved.version },
+        });
+        const peers = wsClients.get(graphId) ?? new Set<WebSocket>();
+        peers.forEach((peer) => {
+          if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+            peer.send(JSON.stringify({ type: 'layout-sync', state: saved }));
+          }
+        });
+      }
+    } catch (err) {
+      ws.send(JSON.stringify({ type: 'error', message: (err as Error).message }));
+    }
+  });
 });
 
 const start = async () => {

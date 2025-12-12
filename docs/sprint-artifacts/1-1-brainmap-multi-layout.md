@@ -29,6 +29,7 @@ Status: in-progress
 - [ ] 协同与容错  
   - [x] 切换/开关变更通过 WS 同步（BroadcastChannel 本地多标签模拟）；断线重连后状态一致。  
   - [x] 权限不足提示与降级（URL `?readonly=1` 进入只读）。  
+  - [x] WebSocket 协同：/ws?graphId&role，viewer 拒绝写入；服务器转发 layout-sync。  
 - [ ] 观测与验收  
   - [x] 前端埋点：布局切换/渲染基线写入 `/metrics`（含节点数/布局）。  
   - [x] 审计/访问记录写入验证：布局读写写入 `/audit/events`；访问事件 `/visits` 内存持久。  

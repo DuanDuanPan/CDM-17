@@ -27,10 +27,15 @@ function App() {
   const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
   const controller = useMemo(
     () =>
-      new LayoutController('demo-graph', apiBase, (s) => {
-        setState({ ...s });
-      }),
-    [apiBase]
+      new LayoutController(
+        'demo-graph',
+        apiBase,
+        (s) => {
+          setState({ ...s });
+        },
+        isReadonly ? 'viewer' : 'editor'
+      ),
+    [apiBase, isReadonly]
   );
   const [state, setState] = useState<LayoutControllerState>(controller.getState());
   const [lastSync, setLastSync] = useState<string>();

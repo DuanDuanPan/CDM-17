@@ -58,13 +58,21 @@ export class LayoutController {
   private graphId: string;
   private channel?: BroadcastChannel;
   private onChange?: (state: LayoutControllerState) => void;
+  private ws?: WebSocket;
+  private wsRole: 'editor' | 'viewer';
 
-  constructor(graphId: string, apiBase = 'http://localhost:4000', onChange?: (s: LayoutControllerState) => void) {
+  constructor(
+    graphId: string,
+    apiBase = 'http://localhost:4000',
+    onChange?: (s: LayoutControllerState) => void,
+    wsRole: 'editor' | 'viewer' = 'editor'
+  ) {
     this.graphId = graphId;
     this.api = new LayoutApi(new HttpClient(apiBase));
     this.telemetry = new TelemetryApi(new HttpClient(apiBase));
     this.state = { mode: 'free', toggles: defaultToggles, version: 0 };
     this.onChange = onChange;
+    this.wsRole = wsRole;
     if (typeof BroadcastChannel !== 'undefined') {
       this.channel = new BroadcastChannel(`layout-${graphId}`);
       this.channel.addEventListener('message', (ev) => {
@@ -72,6 +80,22 @@ export class LayoutController {
         if (!incoming?.version || incoming.version <= this.state.version) return;
         this.state = { ...incoming, saving: false, error: undefined };
         this.onChange?.(this.state);
+      });
+    }
+    if (typeof WebSocket !== 'undefined') {
+      const wsUrl = `${apiBase.replace('http', 'ws')}/ws?graphId=${graphId}&role=${wsRole}`;
+      this.ws = new WebSocket(wsUrl);
+      this.ws.addEventListener('message', (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === 'layout-sync' && msg.state?.version > this.state.version) {
+            this.state = { ...this.state, ...msg.state, saving: false, error: undefined };
+            this.broadcast();
+            this.onChange?.(this.state);
+          }
+        } catch {
+          // ignore malformed
+        }
       });
     }
   }
@@ -136,6 +160,9 @@ export class LayoutController {
       };
       this.broadcast();
       this.onChange?.(this.state);
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: 'layout-update', state: saved, actor: updatedBy }));
+      }
       this.telemetry.sendMetric({
         name: 'layout.save',
         value: saved.version,
