@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import { createPluginRegistry } from '@cdm/core-server';
-import { createLayoutService } from '@cdm/core-server/src/layout';
+import { createLayoutService } from '@cdm/core-server';
 import { LayoutState, AuditEvent, PerfMetric, VisitLog } from '@cdm/types';
 import { InMemoryGraphRepository } from '@cdm/database';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -100,6 +100,7 @@ app.register(async (instance) => {
 
 // WebSocket协同：ws://host:4000?graphId=demo-graph&role=editor
 const wss = new WebSocketServer({ noServer: true });
+const editorToken = process.env.WS_EDITOR_TOKEN;
 
 app.server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url ?? '', `http://${request.headers.host}`);
@@ -112,7 +113,10 @@ app.server.on('upgrade', (request, socket, head) => {
 wss.on('connection', (ws, request) => {
   const url = new URL(request.url ?? '', `http://${request.headers.host}`);
   const graphId = url.searchParams.get('graphId') ?? 'default';
-  const role = url.searchParams.get('role') ?? 'editor'; // editor/viewer
+  const roleParam = url.searchParams.get('role') ?? 'viewer';
+  const token = url.searchParams.get('token');
+  const role: 'editor' | 'viewer' =
+    roleParam === 'editor' && (!editorToken || token === editorToken) ? 'editor' : 'viewer';
   const set = wsClients.get(graphId) ?? new Set<WebSocket>();
   set.add(ws);
   wsClients.set(graphId, set);

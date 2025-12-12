@@ -63,7 +63,9 @@ export class LayoutController {
 
   constructor(
     graphId: string,
-    apiBase = 'http://localhost:4000',
+    apiBase = typeof window !== 'undefined'
+      ? (window as any).__CDM_API__ ?? 'http://localhost:4000'
+      : 'http://localhost:4000',
     onChange?: (s: LayoutControllerState) => void,
     wsRole: 'editor' | 'viewer' = 'editor'
   ) {

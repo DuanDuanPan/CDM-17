@@ -5,6 +5,7 @@ export default defineConfig({
   timeout: 10_000,
   expect: { timeout: 5_000 },
   reporter: [['list']],
+  globalSetup: './playwright.global-setup.ts',
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'retain-on-failure',

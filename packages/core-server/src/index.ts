@@ -37,3 +37,5 @@ export class PluginRegistry {
 }
 
 export const createPluginRegistry = (hooks?: Partial<ServerHooks>) => new PluginRegistry(hooks);
+
+export * from './layout';
