@@ -33,6 +33,8 @@ function App() {
   );
   const [state, setState] = useState<LayoutControllerState>(controller.getState());
   const [lastSync, setLastSync] = useState<string>();
+  const [lastRenderMs, setLastRenderMs] = useState<number>();
+  const [sampleNodeCount] = useState(1000);
 
   useEffect(() => {
     controller.load().then(setState);
@@ -102,6 +104,34 @@ function App() {
             <p>当前布局：{layoutModes.find((m) => m.key === state.mode)?.label}</p>
             <p>开关状态：{toggleList.map((t) => `${t.label}:${state.toggles?.[t.key] ? '开' : '关'}`).join(' / ')}</p>
             <p>占位：后续接入真实画布渲染与协同。</p>
+            <div className="perf-panel">
+              <div className="perf-title">性能快照</div>
+              <div className="perf-row">
+                <span>节点数</span>
+                <span>{sampleNodeCount}</span>
+              </div>
+              <div className="perf-row">
+                <span>最近渲染耗时</span>
+                <span>{lastRenderMs ? `${lastRenderMs.toFixed(2)} ms` : '未测'}</span>
+              </div>
+              <button
+                className="btn"
+                onClick={() => {
+                  const nodes = Array.from({ length: sampleNodeCount }, (_, i) => ({
+                    id: i,
+                    x: Math.random() * 2000,
+                    y: Math.random() * 2000,
+                  }));
+                  const start = performance.now();
+                  // 简易视口裁剪：只保留前 200 个示例用于渲染
+                  nodes.slice(0, 200).map((n) => n.x + n.y);
+                  const end = performance.now();
+                  setLastRenderMs(end - start);
+                }}
+              >
+                运行 1k 节点渲染基线
+              </button>
+            </div>
           </Section>
         </main>
         <aside className="inspector">

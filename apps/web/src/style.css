@@ -121,6 +121,29 @@ body {
   line-height: 1.6;
 }
 
+.perf-panel {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.perf-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.perf-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #475569;
+}
+
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;

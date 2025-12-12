@@ -1,12 +1,19 @@
 import Fastify from 'fastify';
 import { createPluginRegistry } from '@cdm/core-server';
 import { createLayoutService } from '@cdm/core-server/src/layout';
-import { LayoutState } from '@cdm/types';
+import { LayoutState, AuditEvent } from '@cdm/types';
 import { loadPreset } from '@cdm/preset-default';
 
 const app = Fastify({ logger: true });
 const registry = loadPreset(createPluginRegistry());
 const layoutService = createLayoutService();
+const auditEvents: AuditEvent[] = [];
+
+const recordAudit = (evt: AuditEvent) => {
+  const enriched = { ...evt, id: evt.id ?? `audit-${auditEvents.length + 1}` };
+  auditEvents.push(enriched);
+  app.log.info({ audit: enriched }, 'audit recorded');
+};
 
 app.get('/health', async () => ({
   status: 'ok',
@@ -22,6 +29,12 @@ app.register(async (instance) => {
     Params: { graphId: string };
   }>('/layout/:graphId', async (req) => {
     const state = layoutService.getLayout(req.params.graphId);
+    recordAudit({
+      actor: 'system',
+      action: 'layout-read',
+      target: req.params.graphId,
+      createdAt: new Date().toISOString(),
+    } as AuditEvent);
     return state ?? { graphId: req.params.graphId, message: 'not-found' };
   });
 
@@ -34,8 +47,18 @@ app.register(async (instance) => {
       graphId: req.params.graphId,
       updatedAt: new Date().toISOString(),
     });
+    recordAudit({
+      id: `audit-${auditEvents.length + 1}`,
+      actor: 'system',
+      action: 'layout-write',
+      target: req.params.graphId,
+      createdAt: new Date().toISOString(),
+      metadata: { mode: saved.mode, version: saved.version },
+    });
     return saved;
   });
+
+  instance.get('/audit/events', async () => auditEvents);
 });
 
 const start = async () => {
