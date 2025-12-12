@@ -144,6 +144,28 @@ body {
   color: #475569;
 }
 
+.virtual-list {
+  margin-top: 12px;
+  height: 320px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  position: relative;
+}
+
+.virtual-row {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #0f172a;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;

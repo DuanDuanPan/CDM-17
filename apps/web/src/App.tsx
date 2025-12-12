@@ -35,6 +35,24 @@ function App() {
   const [lastSync, setLastSync] = useState<string>();
   const [lastRenderMs, setLastRenderMs] = useState<number>();
   const [sampleNodeCount] = useState(1000);
+  const [visibleNodes, setVisibleNodes] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  const [scrollTop, setScrollTop] = useState(0);
+  const viewportHeight = 320;
+  const rowHeight = 30;
+
+  useEffect(() => {
+    const nodes = Array.from({ length: sampleNodeCount }, (_, i) => ({
+      id: i,
+      x: Math.random() * 2000,
+      y: Math.random() * 2000,
+    }));
+    const updateVisible = () => {
+      const start = Math.floor(scrollTop / rowHeight);
+      const end = Math.min(sampleNodeCount, start + Math.ceil(viewportHeight / rowHeight) + 10);
+      setVisibleNodes(nodes.slice(start, end));
+    };
+    updateVisible();
+  }, [scrollTop, sampleNodeCount]);
 
   useEffect(() => {
     controller.load().then(setState);
@@ -131,6 +149,14 @@ function App() {
               >
                 运行 1k 节点渲染基线
               </button>
+            </div>
+            <div className="virtual-list" onScroll={(e) => setScrollTop((e.target as HTMLDivElement).scrollTop)}>
+              {visibleNodes.map((n) => (
+                <div key={n.id} className="virtual-row" style={{ transform: `translateY(${n.id * rowHeight}px)` }}>
+                  节点 #{n.id} — x:{n.x.toFixed(1)} y:{n.y.toFixed(1)}
+                </div>
+              ))}
+              <div style={{ height: sampleNodeCount * rowHeight }} aria-hidden />
             </div>
           </Section>
         </main>
