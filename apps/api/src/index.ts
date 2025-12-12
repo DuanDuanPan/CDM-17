@@ -4,6 +4,8 @@ import { createLayoutService } from '@cdm/core-server/src/layout';
 import { LayoutState, AuditEvent, PerfMetric, VisitLog } from '@cdm/types';
 import { InMemoryGraphRepository } from '@cdm/database';
 import { WebSocketServer, WebSocket } from 'ws';
+import fs from 'fs';
+import path from 'path';
 import { loadPreset } from '@cdm/preset-default';
 
 const app = Fastify({ logger: true });
@@ -14,10 +16,21 @@ const auditEvents: AuditEvent[] = [];
 const metrics: PerfMetric[] = [];
 const visitLogs: VisitLog[] = [];
 const wsClients = new Map<string, Set<WebSocket>>(); // graphId -> clients
+const dataDir = path.join(process.cwd(), 'data');
+const auditFile = path.join(dataDir, 'audit-log.jsonl');
+const visitFile = path.join(dataDir, 'visit-log.jsonl');
+const metricFile = path.join(dataDir, 'metrics-log.jsonl');
+
+fs.mkdirSync(dataDir, { recursive: true });
+
+const appendJsonl = (filepath: string, obj: unknown) => {
+  fs.appendFileSync(filepath, JSON.stringify(obj) + '\n', 'utf8');
+};
 
 const recordAudit = (evt: AuditEvent) => {
   const enriched = { ...evt, id: evt.id ?? `audit-${auditEvents.length + 1}` };
   auditEvents.push(enriched);
+  appendJsonl(auditFile, enriched);
   app.log.info({ audit: enriched }, 'audit recorded');
 };
 
@@ -69,6 +82,7 @@ app.register(async (instance) => {
     const log = { ...req.body, id: req.body.id ?? `visit-${visitLogs.length + 1}` };
     visitLogs.push(log);
     repo.logVisit(log);
+    appendJsonl(visitFile, log);
     return log;
   });
 
@@ -77,6 +91,7 @@ app.register(async (instance) => {
   instance.post<{ Body: PerfMetric }>('/metrics', async (req) => {
     const metric = req.body;
     metrics.push(metric);
+    appendJsonl(metricFile, metric);
     return metric;
   });
 
