@@ -97,14 +97,27 @@ status: draft
 - 导出/分享安全：链接误配或水印关闭导致泄露；→ 默认强制水印/遮罩，分享需密级校验，失效快捷入口，日志可追溯。
 - 审计/访问记录可靠性：日志写入/查询超时或丢失；→ append-only + 重试/缓冲；独立监控与告警；导出失败降级为分页查询。
 
-# 8. 未决项
-- 字段/附件级权限默认继承策略细化。
-- 跨图血缘粒度与冲突处理方案。
-- 性能压测脚本与 P95/P99 指标分档。
-- 国产化/内网部署、国密算法支持的优先级。
-- 访问记录数据模型：事件类型、主体、资源、密级、来源 IP/客户端；存储留存策略与脱敏规则。
-- 分享默认策略：水印/遮罩开关的默认与可覆盖范围；公共链接的密级门槛与有效期。
-- 导出范围与遮罩冲突处理：全图/子树导出时对无权限字段/附件的遮罩与提示规则。
+# 8. 决策闭环（2025-12-12）
+- 访问记录数据模型（写入/查询统一）：
+  - 字段：event_id(UUID)、project_id、graph_id、node_id(optional)、resource_type(graph/node/export/share)、resource_level、subject_user_id、subject_level、action(view/edit/download/export/share_create/share_visit/share_invalidate)、channel(web/ws/api/share_link)、result(allow/deny)、ip(anonymized after 30d)、ua_fingerprint(hash)、ts_ms、latency_ms、request_id、client_version。
+  - 留存：热存储 90 天可查询，冷存储 12 个月（S3/对象存储）；IP/UA 30 天后哈希化；导出/分享关联事件可追溯 12 个月。
+  - 索引： (graph_id, ts desc)、(project_id, ts desc)、(action, ts)、(resource_level, ts)；TTL 400 天；所有查询强制按 project_id + 时间窗。
+- 分享默认策略：
+  - 默认开启水印与敏感遮罩（不可关闭）；默认有效期 7 天，可调 1–30 天；资源密级 ≥“机密”禁用公开分享链接，仅限受邀访问。
+  - 权限不足或资源超密级时阻断创建，提示文案：“链接创建失败：资源密级高于你的授权级别，可发起权限提升或邀请协作者。”
+  - 失效操作即时生效并写入访问记录；访问超期返回错误码 41001（link_expired）。
+- 导出范围与遮罩冲突：
+  - 后端总是先做 ACL，再导出；无权限字段/附件一律遮罩，列表与导出文件显示占位“***”；记录遮罩计数。
+  - 全图导出若遮罩节点>500，则提示“存在大量遮罩，自动降级为结构-only 导出或请选择子树”；用户可改为“选中子树”或“结构-only（无字段/附件）”。
+  - 导出超时支持分片/重试；失败提示“可切换纯文本/结构-only 以完成导出”。
+- 模板版本与回滚：模板/片段采用版本化 {draft → published → deprecated}；仅 published 可被选择；发布需要校验必填与密级；回滚=提升旧版本为新 published，并写审计/访问记录。
+- 性能压测脚本与指标：
+  - Script-P1：1k 节点加载/缩放/折叠（50 并发，k6），目标 P95 交互<100ms。
+  - Script-P2：协同编辑 50 并发 + 评论/@（ws + http），目标协同延迟<200ms。
+  - Script-P3：导出中等规模（≤500 节点含附件元数据）+ 访问记录查询/导出，目标导出 P95<3s，访问记录查询 P95<2s。
+- 未读计数与错误码：
+  - 未读单一来源 = Notification Service Inbox；评论未读与站内信共享计数，不再在评论侧维护副本。
+  - 权限/分享/导出错误码：40301(classification_denied)、40302(field_attachment_masked)、40303(audit_required)、41001(link_expired)、42910(rate_limited)。
 
 # 9. Architecture Blueprint（高层）
 - 总体：前后端分离 + 实时协同通道 + 权限/审计网关 + 分层存储（图数据/版本快照/审计/通知）。
