@@ -1,6 +1,6 @@
 # Story 1.1: brainmap-multi-layout
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -23,19 +23,19 @@ Status: in-progress
 - [x] 布局状态模型与持久化  
   - [x] 定义布局状态 schema（布局类型、节点坐标/折叠、开关状态、版本号）。  
   - [x] 后端接口：GET/PUT 布局状态（走权限网关，写审计）。  
-- [ ] 前端布局引擎  
+- [x] 前端布局引擎  
   - [x] 实现自由/树/逻辑的切换与状态恢复；吸附/对齐线/网格/距离线开关。  
   - [x] 1k 节点渲染优化：视口分片、线裁剪、增量重绘（虚拟列表 + Canvas 视口裁剪示例）。  
-- [ ] 协同与容错  
+- [x] 协同与容错  
   - [x] 切换/开关变更通过 WS 同步（BroadcastChannel 本地多标签模拟）；断线重连后状态一致。  
   - [x] 权限不足提示与降级（URL `?readonly=1` 进入只读）。  
   - [x] WebSocket 协同：/ws?graphId&role，viewer 拒绝写入；服务器转发 layout-sync。  
-- [ ] 观测与验收  
+- [x] 观测与验收  
   - [x] 前端埋点：布局切换/渲染基线写入 `/metrics`（含节点数/布局）。  
   - [x] 审计/访问记录写入验证：布局读写写入 `/audit/events`；访问事件 `/visits` 内存持久。  
   - [x] 安全回归占位：画布默认水印覆盖（只读也显示）。  
   - [x] 审计/访问/指标持久化：写入 `data/audit-log.jsonl`、`data/visit-log.jsonl`、`data/metrics-log.jsonl`。  
-- [ ] 测试  
+- [x] 测试  
   - [x] 生成 1k 节点数据集，自动化场景：基线渲染耗时占位（tooling/scripts/perf-layout.ts）。  
   - [x] WS 协同脚本：`tooling/tests/ws-layout-check.ts`（需先启动 API）验证 viewer 拒绝写入、editor 同步广播。  
   - [x] UI e2e 只读校验：`apps/web/tests/layout-readonly.spec.ts`（Playwright）。  
