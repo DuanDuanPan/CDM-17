@@ -1,5 +1,5 @@
 import { Node, Edge, LayoutState, LayoutMode } from '@cdm/types';
-import { RealtimeClient, HttpClient, LayoutApi } from '@cdm/sdk';
+import { RealtimeClient, HttpClient, LayoutApi, TelemetryApi } from '@cdm/sdk';
 
 export interface ViewState {
   nodes: Node[];
@@ -54,6 +54,7 @@ const defaultToggles: LayoutToggles = { snap: true, grid: true, guide: true, dis
 export class LayoutController {
   private state: LayoutControllerState;
   private api: LayoutApi;
+  private telemetry: TelemetryApi;
   private graphId: string;
   private channel?: BroadcastChannel;
   private onChange?: (state: LayoutControllerState) => void;
@@ -61,6 +62,7 @@ export class LayoutController {
   constructor(graphId: string, apiBase = 'http://localhost:4000', onChange?: (s: LayoutControllerState) => void) {
     this.graphId = graphId;
     this.api = new LayoutApi(new HttpClient(apiBase));
+    this.telemetry = new TelemetryApi(new HttpClient(apiBase));
     this.state = { mode: 'free', toggles: defaultToggles, version: 0 };
     this.onChange = onChange;
     if (typeof BroadcastChannel !== 'undefined') {
@@ -134,6 +136,12 @@ export class LayoutController {
       };
       this.broadcast();
       this.onChange?.(this.state);
+      this.telemetry.sendMetric({
+        name: 'layout.save',
+        value: saved.version,
+        unit: 'version',
+        context: { mode: saved.mode, toggles: saved.payload },
+      });
       return this.state;
     } catch (err) {
       this.state = { ...this.state, saving: false, error: (err as Error).message };

@@ -1,13 +1,14 @@
 import Fastify from 'fastify';
 import { createPluginRegistry } from '@cdm/core-server';
 import { createLayoutService } from '@cdm/core-server/src/layout';
-import { LayoutState, AuditEvent } from '@cdm/types';
+import { LayoutState, AuditEvent, PerfMetric } from '@cdm/types';
 import { loadPreset } from '@cdm/preset-default';
 
 const app = Fastify({ logger: true });
 const registry = loadPreset(createPluginRegistry());
 const layoutService = createLayoutService();
 const auditEvents: AuditEvent[] = [];
+const metrics: PerfMetric[] = [];
 
 const recordAudit = (evt: AuditEvent) => {
   const enriched = { ...evt, id: evt.id ?? `audit-${auditEvents.length + 1}` };
@@ -59,6 +60,14 @@ app.register(async (instance) => {
   });
 
   instance.get('/audit/events', async () => auditEvents);
+
+  instance.post<{ Body: PerfMetric }>('/metrics', async (req) => {
+    const metric = req.body;
+    metrics.push(metric);
+    return metric;
+  });
+
+  instance.get('/metrics', async () => metrics);
 });
 
 const start = async () => {

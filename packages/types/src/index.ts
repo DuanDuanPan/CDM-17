@@ -92,6 +92,15 @@ export interface LayoutState {
   payload: Record<string, unknown>;
 }
 
+export interface PerfMetric {
+  id: string;
+  name: string;
+  value: number;
+  unit?: string;
+  createdAt: string;
+  context?: Record<string, unknown>;
+}
+
 export interface PluginManifest {
   name: string;
   version: string;

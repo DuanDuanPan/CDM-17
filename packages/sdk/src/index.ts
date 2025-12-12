@@ -1,4 +1,4 @@
-import { LayoutState } from '@cdm/types';
+import { LayoutState, PerfMetric } from '@cdm/types';
 
 export interface RequestOptions {
   headers?: Record<string, string>;
@@ -27,6 +27,18 @@ export class HttpClient {
     if (!res.ok) throw new Error(`PUT ${url} failed: ${res.status}`);
     return res.json() as Promise<T>;
   }
+
+  async post<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
+    const url = new URL(path, this.baseUrl).toString();
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
+      body: JSON.stringify(body),
+      signal: options.signal,
+    });
+    if (!res.ok) throw new Error(`POST ${url} failed: ${res.status}`);
+    return res.json() as Promise<T>;
+  }
 }
 
 export class RealtimeClient {
@@ -48,5 +60,21 @@ export class LayoutApi {
 
   saveLayout(graphId: string, state: Omit<LayoutState, 'graphId'>) {
     return this.http.put<LayoutState>(`/layout/${graphId}`, state);
+  }
+}
+
+export class TelemetryApi {
+  constructor(private http: HttpClient) {}
+
+  sendMetric(metric: Omit<PerfMetric, 'id' | 'createdAt'> & { createdAt?: string }) {
+    const payload: PerfMetric = {
+      id: `metric-${Date.now()}`,
+      createdAt: metric.createdAt ?? new Date().toISOString(),
+      name: metric.name,
+      value: metric.value,
+      unit: metric.unit,
+      context: metric.context,
+    };
+    return this.http.post<PerfMetric>('/metrics', payload);
   }
 }

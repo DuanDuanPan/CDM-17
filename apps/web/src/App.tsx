@@ -26,10 +26,10 @@ function App() {
   const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
   const controller = useMemo(
     () =>
-      new LayoutController('demo-graph', 'http://localhost:4000', (s) => {
+      new LayoutController('demo-graph', apiBase, (s) => {
         setState({ ...s });
       }),
-    []
+    [apiBase]
   );
   const [state, setState] = useState<LayoutControllerState>(controller.getState());
   const [lastSync, setLastSync] = useState<string>();
@@ -39,6 +39,7 @@ function App() {
   const [scrollTop, setScrollTop] = useState(0);
   const viewportHeight = 320;
   const rowHeight = 30;
+  const apiBase = 'http://localhost:4000';
 
   useEffect(() => {
     const nodes = Array.from({ length: sampleNodeCount }, (_, i) => ({
@@ -134,22 +135,34 @@ function App() {
               </div>
               <button
                 className="btn"
-                onClick={() => {
-                  const nodes = Array.from({ length: sampleNodeCount }, (_, i) => ({
-                    id: i,
-                    x: Math.random() * 2000,
-                    y: Math.random() * 2000,
-                  }));
-                  const start = performance.now();
-                  // 简易视口裁剪：只保留前 200 个示例用于渲染
-                  nodes.slice(0, 200).map((n) => n.x + n.y);
-                  const end = performance.now();
-                  setLastRenderMs(end - start);
-                }}
-              >
-                运行 1k 节点渲染基线
-              </button>
-            </div>
+              onClick={() => {
+                const nodes = Array.from({ length: sampleNodeCount }, (_, i) => ({
+                  id: i,
+                  x: Math.random() * 2000,
+                  y: Math.random() * 2000,
+                }));
+                const start = performance.now();
+                // 简易视口裁剪：只保留前 200 个示例用于渲染
+                nodes.slice(0, 200).map((n) => n.x + n.y);
+                const end = performance.now();
+                setLastRenderMs(end - start);
+                fetch(`${apiBase}/metrics`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    id: `metric-${Date.now()}`,
+                    name: 'render.baseline',
+                    value: end - start,
+                    unit: 'ms',
+                    createdAt: new Date().toISOString(),
+                    context: { nodeCount: sampleNodeCount, mode: state.mode },
+                  }),
+                }).catch((e) => console.warn('metric post failed', e));
+              }}
+            >
+              运行 1k 节点渲染基线
+            </button>
+          </div>
             <div className="virtual-list" onScroll={(e) => setScrollTop((e.target as HTMLDivElement).scrollTop)}>
               {visibleNodes.map((n) => (
                 <div key={n.id} className="virtual-row" style={{ transform: `translateY(${n.id * rowHeight}px)` }}>
