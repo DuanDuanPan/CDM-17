@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import './style.css';
 import { LayoutController, LayoutControllerState } from '@cdm/core-client';
+import { useRef } from 'react';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="section">
@@ -37,23 +38,89 @@ function App() {
   const [sampleNodeCount] = useState(1000);
   const [visibleNodes, setVisibleNodes] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [scrollTop, setScrollTop] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(0);
   const viewportHeight = 320;
   const rowHeight = 30;
   const apiBase = 'http://localhost:4000';
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const nodesRef = useRef<Array<{ id: number; x: number; y: number }>>([]);
+  const edgesRef = useRef<Array<{ from: number; to: number }>>([]);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
 
+  // 初始化数据集（节点/边）
   useEffect(() => {
-    const nodes = Array.from({ length: sampleNodeCount }, (_, i) => ({
-      id: i,
-      x: Math.random() * 2000,
-      y: Math.random() * 2000,
-    }));
+    if (nodesRef.current.length === 0) {
+      nodesRef.current = Array.from({ length: sampleNodeCount }, (_, i) => ({
+        id: i,
+        x: Math.random() * 2000 - 500,
+        y: Math.random() * 2000 - 500,
+      }));
+      edgesRef.current = Array.from({ length: sampleNodeCount - 1 }, (_, i) => ({
+        from: i,
+        to: i + 1,
+      }));
+    }
+  }, [sampleNodeCount]);
+
+  // 虚拟列表视口
+  useEffect(() => {
     const updateVisible = () => {
       const start = Math.floor(scrollTop / rowHeight);
       const end = Math.min(sampleNodeCount, start + Math.ceil(viewportHeight / rowHeight) + 10);
-      setVisibleNodes(nodes.slice(start, end));
+      setVisibleNodes(nodesRef.current.slice(start, end));
     };
     updateVisible();
-  }, [scrollTop, sampleNodeCount]);
+  }, [scrollTop, sampleNodeCount, rowHeight, viewportHeight]);
+
+  // 画布渲染（视口裁剪 + 线裁剪）
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let raf: number;
+    const render = () => {
+      const start = performance.now();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(offset.x, offset.y);
+      ctx.scale(scale, scale);
+
+      const vw = canvas.width / scale;
+      const vh = canvas.height / scale;
+      const visible = nodesRef.current.filter(
+        (n) => n.x > -offset.x - 50 && n.x < -offset.x + vw + 50 && n.y > -offset.y - 50 && n.y < -offset.y + vh + 50
+      );
+      const visibleIds = new Set(visible.map((n) => n.id));
+      setVisibleCount(visible.length);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+      edgesRef.current.forEach((e) => {
+        if (!visibleIds.has(e.from) || !visibleIds.has(e.to)) return;
+        const from = nodesRef.current[e.from];
+        const to = nodesRef.current[e.to];
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+      });
+
+      ctx.fillStyle = '#2563eb';
+      visible.forEach((n) => {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.restore();
+      const end = performance.now();
+      setLastRenderMs(end - start);
+      raf = requestAnimationFrame(render);
+    };
+    raf = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(raf);
+  }, [offset, scale]);
 
   useEffect(() => {
     controller.load().then(setState);
@@ -75,6 +142,14 @@ function App() {
     const saved = await controller.save('web-shell');
     setState({ ...saved });
     setLastSync(new Date().toLocaleTimeString());
+  };
+
+  const pan = (dx: number, dy: number) => {
+    setOffset((o) => ({ x: o.x + dx, y: o.y + dy }));
+  };
+
+  const zoom = (delta: number) => {
+    setScale((s) => Math.max(0.4, Math.min(2, s + delta)));
   };
 
   return (
@@ -107,6 +182,28 @@ function App() {
             </button>
           ))}
         </div>
+        <div className="toolbar-group">
+          <span className="toolbar-label">视口</span>
+          <button className="btn" onClick={() => pan(-40, 0)}>
+            ←
+          </button>
+          <button className="btn" onClick={() => pan(40, 0)}>
+            →
+          </button>
+          <button className="btn" onClick={() => pan(0, -40)}>
+            ↑
+          </button>
+          <button className="btn" onClick={() => pan(0, 40)}>
+            ↓
+          </button>
+          <button className="btn" onClick={() => zoom(0.1)}>
+            放大
+          </button>
+          <button className="btn" onClick={() => zoom(-0.1)}>
+            缩小
+          </button>
+          <span className="toolbar-label">缩放 {scale.toFixed(2)}</span>
+        </div>
         <div className="toolbar-meta">
           <span>版本：{state.version}</span>
           {state.updatedAt && <span>更新：{new Date(state.updatedAt).toLocaleTimeString()}</span>}
@@ -122,7 +219,11 @@ function App() {
           <Section title="画布">
             <p>当前布局：{layoutModes.find((m) => m.key === state.mode)?.label}</p>
             <p>开关状态：{toggleList.map((t) => `${t.label}:${state.toggles?.[t.key] ? '开' : '关'}`).join(' / ')}</p>
-            <p>占位：后续接入真实画布渲染与协同。</p>
+            <canvas ref={canvasRef} width={880} height={520} className="layout-canvas" />
+            <p>
+              视口可见节点：{visibleCount}/{sampleNodeCount} · 缩放 {scale.toFixed(2)} · 偏移 ({offset.x.toFixed(0)},{' '}
+              {offset.y.toFixed(0)})
+            </p>
             <div className="perf-panel">
               <div className="perf-title">性能快照</div>
               <div className="perf-row">

@@ -103,6 +103,17 @@ body {
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
 }
 
+.layout-canvas {
+  width: 100%;
+  max-width: 880px;
+  height: 520px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  display: block;
+  margin: 12px 0;
+  background: radial-gradient(circle at 20% 20%, #f8fafc, #fff);
+}
+
 .section {
   display: flex;
   flex-direction: column;
