@@ -39,6 +39,10 @@ type PositionedEdge = { from: string; to: string };
 
 function App() {
   const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
+  const apiBase = useMemo(
+    () => import.meta.env.VITE_API_BASE || (window as any).__CDM_API__ || window.location.origin,
+    []
+  );
   const [graphId, setGraphId] = useState('demo-graph');
   const [controller, setController] = useState<LayoutController>(
     () =>
@@ -60,7 +64,6 @@ function App() {
   const [visibleCount, setVisibleCount] = useState(0);
   const viewportHeight = 320;
   const rowHeight = 30;
-  const apiBase = import.meta.env.VITE_API_BASE || (window as any).__CDM_API__ || window.location.origin;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const nodesRef = useRef<PositionedNode[]>([]);
   const edgesRef = useRef<PositionedEdge[]>([]);
@@ -71,6 +74,9 @@ function App() {
     Array<{ graphId: string; offset: { x: number; y: number }; scale: number; selectedId: string | null }>
   >([]);
   const drillStack = useRef<DrillContext[]>([]);
+  const restoreRef = useRef<{ offset: { x: number; y: number }; scale: number; selectedId: string | null } | null>(
+    null
+  );
 
   const seedGraphSnapshot = (count: number) => {
     const now = new Date().toISOString();
@@ -189,6 +195,8 @@ function App() {
   }, [offset, scale, isReadonly]);
 
   useEffect(() => {
+    const restore = restoreRef.current;
+    restoreRef.current = null;
     const c = new LayoutController(
       graphId,
       apiBase,
@@ -201,9 +209,15 @@ function App() {
       }
     );
     setController(c);
-    setSelectedId(null);
-    setOffset({ x: 0, y: 0 });
-    setScale(1);
+    if (restore) {
+      setSelectedId(restore.selectedId);
+      setOffset(restore.offset);
+      setScale(restore.scale);
+    } else {
+      setSelectedId(null);
+      setOffset({ x: 0, y: 0 });
+      setScale(1);
+    }
     c.load().then(setState);
   }, [graphId, apiBase, isReadonly]);
 
@@ -322,6 +336,7 @@ function App() {
       await saveGraphSnapshot(prev.graphId, { nodes: mergedNodes, edges: parentSnap.edges ?? [] });
     }
 
+    restoreRef.current = { offset: prev.offset, scale: prev.scale, selectedId: prev.selectedId };
     setGraphId(prev.graphId);
     setOffset(prev.offset);
     setScale(prev.scale);
