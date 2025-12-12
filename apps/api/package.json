@@ -1,0 +1,21 @@
+{
+  "name": "@cdm/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\""
+  },
+  "dependencies": {
+    "@cdm/core-server": "workspace:*",
+    "@cdm/preset-default": "workspace:*",
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  }
+}

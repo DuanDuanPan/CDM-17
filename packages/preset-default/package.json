@@ -1,0 +1,21 @@
+{
+  "name": "@cdm/preset-default",
+  "version": "0.0.1",
+  "type": "module",
+  "private": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\""
+  },
+  "dependencies": {
+    "@cdm/core-server": "workspace:*",
+    "@cdm/plugin-permission": "workspace:*",
+    "@cdm/plugin-audit-log": "workspace:*",
+    "@cdm/plugin-notification": "workspace:*",
+    "@cdm/plugin-export-share": "workspace:*",
+    "@cdm/plugin-template-ai": "workspace:*",
+    "@cdm/plugin-layout-free": "workspace:*"
+  }
+}

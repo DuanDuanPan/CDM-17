@@ -1,0 +1,12 @@
+node_modules
+.pnp.*
+.pnpm-store
+.turbo
+.dist
+build
+dist
+coverage
+.env
+.env.*
+.DS_Store
+pnpm-lock.yaml

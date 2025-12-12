@@ -1,0 +1,16 @@
+{
+  "name": "@cdm/ui",
+  "version": "0.0.1",
+  "type": "module",
+  "private": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\""
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

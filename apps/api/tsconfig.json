@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "noEmit": false,
+    "target": "ES2021"
+  },
+  "include": ["src"]
+}

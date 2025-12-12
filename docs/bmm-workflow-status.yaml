@@ -1,0 +1,22 @@
+# BMM Workflow Status
+# Auto-generated via workflow-init on 2025-12-12
+# Status values: required/optional/recommended/conditional | file path when completed | skipped
+
+generated: "2025-12-12T04:23:03Z"
+project: "CDM"
+project_type: "product"
+selected_track: "bmad-method"
+field_type: "greenfield"
+workflow_path: ".bmad/bmm/workflows/workflow-status/paths/method-greenfield.yaml"
+workflow_status:
+  brainstorm-project: "docs/brainstorming-session-2025-12-11.md"
+  research: "docs/research-milanote.md"
+  product-brief: "docs/project-brief.md"
+  prd: "docs/prd.md"
+  create-ux-design: "docs/ux-design.md"
+  create-architecture: "docs/architecture.md"
+  create-epics-and-stories: "docs/epics-and-stories.md"
+  test-design: "docs/test-design.md"
+  validate-architecture: "docs/validate-architecture.md"
+  implementation-readiness: "docs/implementation-readiness.md"
+  sprint-planning: "docs/sprint-plan.md"
