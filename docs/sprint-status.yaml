@@ -46,6 +46,9 @@ development_status:
   2-1-task-mapping-and-dependency: done
   2-2-approval-driven-execution: backlog
   2-3-notification-throttling: backlog
+  2-4-tailwind-spike: done
+  2-5-tailwind-bootstrap: done
+  2-6-tailwind-migrate-batch1: drafted
   epic-2-retrospective: optional
 
   epic-3: backlog

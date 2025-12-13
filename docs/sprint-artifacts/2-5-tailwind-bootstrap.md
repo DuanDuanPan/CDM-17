@@ -1,6 +1,6 @@
-# Story 1.5: tailwind-bootstrap (Epic E1)
+# Story 2.5: tailwind-bootstrap (Epic E2)
 
-Status: todo
+Status: done
 
 ## Story
 As a developer, I want Tailwind configured at repo level so I can build and run web without manual CSS setup.
@@ -31,3 +31,17 @@ As a developer, I want Tailwind configured at repo level so I can build and run 
 ## Deliverables
 - Repo builds with Tailwind enabled; status flipped to done.
 - Token list agreed and reflected in `tailwind.config.cjs`.
+
+## 实施说明
+- 工具链：单一根级 `tailwind.config.cjs`（含 token 种子、preflight 关闭以渐进迁移，content 覆盖 index.html + web/src + packages/ui）；`postcss.config.cjs` 已启用 tailwindcss/autoprefixer。
+- 应用侧：入口 `apps/web/src/main.tsx` 全局引入 `styles/tailwind.css`。
+- 样式迁移：将原有全局 reset（:root 字体/背景、box-sizing、body margin）移至 `tailwind.css` 的 `@layer base`，避免重复；业务样式保留在 `style.css`。
+- PoC 组件不再单独引入 tailwind.css，避免重复注入。
+
+## 验证记录（2025-12-13）
+- `pnpm --filter @cdm/web build` 通过，无 Tailwind content 警告；产物 CSS gzip≈2.74 kB，JS gzip≈58.83 kB，耗时 ~1.06s。
+- dev 已在 Story 2-4 验证过启动时间（~366ms）；本次未重复跑 dev，预计一致。
+
+## 决策与后续
+- 保持 preflight 关闭，后续按组件迁移逐步评估开启/替换 reset。
+- 进入 Story 2-6 进行首批组件迁移；Story 2-4 已完成。

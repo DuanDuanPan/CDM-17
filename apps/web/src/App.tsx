@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './style.css';
 import { LayoutController, LayoutControllerState } from '@cdm/core-client';
-import { useRef } from 'react';
 import type { DrillContext, Edge, Node } from '@cdm/types';
+import TailwindCard from './poc/TailwindCard';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="section">
@@ -53,6 +53,9 @@ type GraphSnapshot = { nodes: PositionedNode[]; edges: PositionedEdge[] };
 type GraphHistory = { past: GraphSnapshot[]; future: GraphSnapshot[] };
 
 function App() {
+  const pocMode = useMemo(() => new URLSearchParams(window.location.search).get('poc') === 'tailwind', []);
+  if (pocMode) return <TailwindCard />;
+
   const isReadonly = useMemo(() => new URLSearchParams(window.location.search).get('readonly') === '1', []);
   const apiBase = useMemo(
     () => import.meta.env.VITE_API_BASE || (window as any).__CDM_API__ || window.location.origin,

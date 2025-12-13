@@ -1,4 +1,4 @@
-# Story 1.6: tailwind-migrate-batch1 (Epic E1)
+# Story 2.6: tailwind-migrate-batch1 (Epic E2)
 
 Status: todo
 
