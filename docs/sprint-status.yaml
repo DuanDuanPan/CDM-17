@@ -48,7 +48,8 @@ development_status:
   2-3-notification-throttling: backlog
   2-4-tailwind-spike: done
   2-5-tailwind-bootstrap: done
-  2-6-tailwind-migrate-batch1: drafted
+  2-6-tailwind-migrate-batch1: ready-for-dev
+  2-7-frontend-refactor-best-practice: drafted
   epic-2-retrospective: optional
 
   epic-3: backlog
