@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 
 let apiProcess: ReturnType<typeof exec> | null = null;
 
-async function waitForHealth(url = 'http://localhost:4000/health', retries = 10, intervalMs = 300) {
+async function waitForHealth(url = 'http://127.0.0.1:4000/health', retries = 60, intervalMs = 500) {
   for (let i = 0; i < retries; i += 1) {
     try {
       const res = await fetch(url);
@@ -16,8 +16,15 @@ async function waitForHealth(url = 'http://localhost:4000/health', retries = 10,
 }
 
 async function globalSetup() {
-  // Start API server if not already running
-  apiProcess = exec('pnpm --filter @cdm/api dev --host 0.0.0.0 --port 4000', {
+  // Prefer reusing an existing server to avoid port conflicts.
+  try {
+    await waitForHealth();
+    return;
+  } catch {
+    // continue starting a local dev server
+  }
+
+  apiProcess = exec('pnpm --filter @cdm/api dev', {
     env: { ...process.env, WS_EDITOR_TOKEN: process.env.WS_EDITOR_TOKEN || 'test-token' },
   });
   await waitForHealth();

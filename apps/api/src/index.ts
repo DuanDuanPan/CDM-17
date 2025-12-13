@@ -20,8 +20,38 @@ const dataDir = path.join(process.cwd(), 'data');
 const auditFile = path.join(dataDir, 'audit-log.jsonl');
 const visitFile = path.join(dataDir, 'visit-log.jsonl');
 const metricFile = path.join(dataDir, 'metrics-log.jsonl');
+const editorToken = process.env.WS_EDITOR_TOKEN;
 
 fs.mkdirSync(dataDir, { recursive: true });
+
+const getHttpToken = (req: { headers: Record<string, unknown>; query?: unknown }) => {
+  const headerToken = req.headers['x-cdm-token'];
+  if (typeof headerToken === 'string') return headerToken;
+  if (Array.isArray(headerToken) && typeof headerToken[0] === 'string') return headerToken[0];
+  const queryToken = (req.query as { token?: unknown } | undefined)?.token;
+  if (typeof queryToken === 'string') return queryToken;
+  return undefined;
+};
+
+const normalizeToken = (token: unknown) => (typeof token === 'string' && token.trim() ? token.trim() : undefined);
+
+const isEditorRequest = (req: { headers: Record<string, unknown>; query?: unknown }) => {
+  if (!editorToken) return true;
+  const token = normalizeToken(getHttpToken(req));
+  return token === editorToken;
+};
+
+const isEditorWriteRequest = (req: { headers: Record<string, unknown>; query?: unknown }) => {
+  const token = normalizeToken(getHttpToken(req));
+  if (!token) return false;
+  if (!editorToken) return true;
+  return token === editorToken;
+};
+
+const requireEditor = async (req: { headers: Record<string, unknown>; query?: unknown }, reply: any) => {
+  if (isEditorWriteRequest(req)) return;
+  return reply.code(403).send({ error: 'forbidden' });
+};
 
 const appendJsonl = (filepath: string, obj: unknown) => {
   fs.appendFileSync(filepath, JSON.stringify(obj) + '\n', 'utf8');
@@ -60,7 +90,7 @@ app.register(async (instance) => {
   instance.put<{
     Params: { graphId: string };
     Body: Omit<LayoutState, 'graphId'>;
-  }>('/layout/:graphId', async (req) => {
+  }>('/layout/:graphId', { preHandler: requireEditor }, async (req) => {
     const saved = layoutService.saveLayout({
       ...req.body,
       graphId: req.params.graphId,
@@ -78,7 +108,7 @@ app.register(async (instance) => {
   });
 
   instance.get('/audit/events', async () => auditEvents);
-  instance.post<{ Body: AuditEvent }>('/audit/events', async (req) => {
+  instance.post<{ Body: AuditEvent }>('/audit/events', { preHandler: requireEditor }, async (req) => {
     const evt = { ...req.body, id: req.body.id ?? `audit-${auditEvents.length + 1}` };
     auditEvents.push(evt);
     appendJsonl(auditFile, evt);
@@ -105,25 +135,52 @@ app.register(async (instance) => {
 
   instance.get('/graph/:graphId', async (req) => {
     const data = repo.getGraph((req.params as { graphId: string }).graphId) ?? { nodes: [], edges: [] };
-    return data;
+    if (isEditorRequest(req as any)) return data;
+    const maskedIds = new Set<string>();
+    const nodes = (data.nodes ?? []).map((node: any) => {
+      if (!node || typeof node !== 'object') return node;
+      const classification = (node.fields as any)?.classification;
+      const isPublic = classification == null || classification === 'public';
+      const shouldMask = Boolean(node.folded) || !isPublic;
+      if (!shouldMask) return node;
+      if (typeof node.id === 'string') maskedIds.add(node.id);
+      return { ...node, label: '(masked)', fields: undefined, masked: true };
+    });
+    const edges = (data.edges ?? []).filter((edge: any) => {
+      if (!edge || typeof edge !== 'object') return true;
+      const from = (edge as any).from;
+      const to = (edge as any).to;
+      if (typeof from !== 'string' || typeof to !== 'string') return true;
+      return !maskedIds.has(from) && !maskedIds.has(to);
+    });
+    return { ...data, nodes, edges };
   });
 
-  instance.put<{ Params: { graphId: string }; Body: { nodes: unknown[]; edges: unknown[] } }>('/graph/:graphId', async (req) => {
-    repo.saveGraph(req.params.graphId, req.body.nodes as any[], req.body.edges as any[]);
-    recordAudit({
-      id: `audit-${auditEvents.length + 1}`,
-      actor: 'system',
-      action: 'graph-write',
-      target: req.params.graphId,
-      createdAt: new Date().toISOString(),
-    });
-    return { ok: true };
-  });
+  instance.put<{ Params: { graphId: string }; Body: { nodes: unknown[]; edges: unknown[] } }>(
+    '/graph/:graphId',
+    { preHandler: requireEditor },
+    async (req) => {
+      repo.saveGraph(req.params.graphId, req.body.nodes as any[], req.body.edges as any[]);
+      const peers = wsClients.get(req.params.graphId) ?? new Set<WebSocket>();
+      peers.forEach((peer) => {
+        if (peer.readyState === WebSocket.OPEN) {
+          peer.send(JSON.stringify({ type: 'graph-sync', snapshot: req.body }));
+        }
+      });
+      recordAudit({
+        id: `audit-${auditEvents.length + 1}`,
+        actor: 'system',
+        action: 'graph-write',
+        target: req.params.graphId,
+        createdAt: new Date().toISOString(),
+      });
+      return { ok: true };
+    }
+  );
 });
 
 // WebSocket协同：ws://host:4000?graphId=demo-graph&role=editor
 const wss = new WebSocketServer({ noServer: true });
-const editorToken = process.env.WS_EDITOR_TOKEN;
 
 app.server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url ?? '', `http://${request.headers.host}`);
@@ -137,9 +194,9 @@ wss.on('connection', (ws, request) => {
   const url = new URL(request.url ?? '', `http://${request.headers.host}`);
   const graphId = url.searchParams.get('graphId') ?? 'default';
   const roleParam = url.searchParams.get('role') ?? 'viewer';
-  const token = url.searchParams.get('token');
+  const token = normalizeToken(url.searchParams.get('token'));
   const role: 'editor' | 'viewer' =
-    roleParam === 'editor' && editorToken && token === editorToken ? 'editor' : 'viewer';
+    roleParam === 'editor' && token && (editorToken ? token === editorToken : true) ? 'editor' : 'viewer';
   const set = wsClients.get(graphId) ?? new Set<WebSocket>();
   set.add(ws);
   wsClients.set(graphId, set);

@@ -21,17 +21,18 @@ Status: done
 
 - [x] 交互与状态  
   - [x] 面包屑/返回控件；记录主图选中与视口状态，返回时恢复（toolbar 下钻/返回，栈式保存 offset/scale/选中）。  
-  - [x] 下钻视图的数据装载与渲染（子图按 nodeId 派生 graphId，加载/保存 graph snapshot；撤销/重做占位）。  
+  - [x] 下钻视图的数据装载与渲染（子图按 nodeId 派生 graphId，加载/保存 graph snapshot；支持撤销/重做并可跨下钻上下文使用）。  
 - [x] 数据与同步  
   - [x] 子图编辑（节点/边/布局）写回主图存储；WS 广播同步主/子视图（graph-update/graph-sync）。  
-  - [x] 权限与水印占位：只读(viewer)遮罩 folded 节点并禁止写；水印默认开启。  
+  - [x] 权限与水印：只读(viewer)遮罩 folded 或非 public 密级节点并禁止写；水印默认开启。  
 - [x] 审计与访问记录  
-  - [x] 记录下钻、返回、子图保存到 `/audit/events`；访问记录 `/visits` 包含 graphId/nodeId/action。  
+  - [x] 记录下钻、返回、子图保存到 `/audit/events`；访问记录 `/visits` 包含 graphId/nodeId/action 与密级(classification)。  
   - [x] 将日志写入 `data/*.jsonl`（保持现有持久化路径）。  
 - [x] 性能与观测  
-  - [x] 埋点：下钻/返回耗时写入 `/metrics`（含节点数/布局）。  
-- [ ] 测试  
+  - [x] 埋点：下钻/返回耗时写入 `/metrics`；前端展示 drill/return P95 与样本数（含渲染基线）。  
+- [x] 测试  
   - [x] Playwright：下钻-编辑-返回状态保持；只读模式拒绝下钻（`apps/web/tests/drill-return.spec.ts`）。  
+  - [x] Playwright：撤销/重做可跨下钻上下文使用（`apps/web/tests/undo-redo.spec.ts`）。  
   - [x] WS 脚本/集成：editor 改动可同步给 viewer；viewer 无法写入（`tooling/tests/ws-layout-check.ts` 已扩展 graph-sync）。  
 
 ## Dev Notes
@@ -54,10 +55,41 @@ Status: done
 
 ### Context Reference
 
+- Story 1.2 (US1.2) 子图下钻与回链
+- 相关用例：`apps/web/tests/drill-return.spec.ts`
+
 ### Agent Model Used
+
+- GPT-5.2 (Codex CLI)
 
 ### Debug Log References
 
+- Playwright：`apps/web/playwright.config.ts`（已加入 `NO_PROXY` 以绕过本机代理导致的 false-positive webServer 检测）
+- Playwright traces：`apps/web/test-results/**/trace.zip`（retain-on-failure）
+
 ### Completion Notes List
 
+- 下钻/回链：支持多级下钻后按面包屑任意层级回退，回退过程逐层合并子图编辑回父图并恢复视口/选中。
+- 撤销/重做：按 graphId 维护历史；子图写回父图前记录父图快照，支持跨下钻上下文撤销/重做。
+- 面包屑 UI：工具栏新增“返回主图”按钮与 breadcrumb（根 + 层级节点 label）。
+- 资源释放：新增 `LayoutController.close()` 并在 graphId 切换时 cleanup，避免 WS/BroadcastChannel 泄漏。
+- Dev 代理：Vite dev 增加 `/layout`、`/graph`、`/audit`、`/metrics`、`/visits`、`/ws` 代理到 API 4000，避免浏览器跨域问题。
+- 权限/密级：访问记录与审计 metadata 写入 classification；API viewer 读图时遮罩 folded 或非 public 密级节点。
+- 性能可观测：perf panel 展示 drill/return P95 与样本计数；下钻/返回继续写入 `/metrics`。
+- 测试：新增 `apps/web/tests/breadcrumb.spec.ts`；Playwright 全量通过（chromium）。
+- 工程化：补齐 ESLint v9 flat config（`eslint.config.cjs`）与 Turbo 2.x `tasks` 配置（`turbo.json`）。
+
 ### File List
+
+- `apps/web/src/App.tsx`
+- `apps/web/src/style.css`
+- `apps/web/vite.config.ts`
+- `apps/web/playwright.config.ts`
+- `apps/web/playwright.global-setup.ts`
+- `apps/web/tests/breadcrumb.spec.ts`
+- `apps/web/tests/undo-redo.spec.ts`
+- `packages/core-client/src/index.ts`
+- `apps/api/src/index.ts`
+- `packages/types/src/index.ts`
+- `eslint.config.cjs`
+- `turbo.json`

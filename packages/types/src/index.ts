@@ -5,16 +5,21 @@ export interface Node {
   label: string;
   kind: NodeKind;
   fields?: Record<string, unknown>;
+  masked?: boolean;
+  x?: number;
+  y?: number;
+  folded?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Edge {
-  id: string;
   from: string;
   to: string;
-  relation: 'depends-on' | 'blocks' | 'related' | 'parent';
-  createdAt: string;
+  id?: string;
+  relation?: 'depends-on' | 'blocks' | 'related' | 'parent';
+  dependencyType?: 'FS' | 'SS' | 'FF' | 'SF';
+  createdAt?: string;
 }
 
 export interface Version {
@@ -80,6 +85,8 @@ export interface VisitLog {
   ip?: string;
   graphId?: string;
   action?: string;
+  role?: 'viewer' | 'editor';
+  classification?: string;
 }
 
 export interface DrillContext {

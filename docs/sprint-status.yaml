@@ -1,8 +1,8 @@
-# generated: 2025-12-12
+# generated: 2025-12-13
 # project: CDM
 # project_key: cdm
 # tracking_system: file-system
-# story_location: docs/stories
+# story_location: docs/sprint-artifacts
 
 # STATUS DEFINITIONS:
 # ==================
@@ -29,21 +29,21 @@
 # - Stories advance: backlog → drafted → ready-for-dev → in-progress → review → done
 # - Each epic has a retrospective entry
 
-generated: 2025-12-12
+generated: 2025-12-13
 project: CDM
 project_key: cdm
 tracking_system: file-system
-story_location: docs/stories
+story_location: docs/sprint-artifacts
 
 development_status:
-  epic-1: in-progress
+  epic-1: done
   1-1-brainmap-multi-layout: done
   1-2-subgraph-drill-and-return: done
-  1-3-mindmap-gantt-timeline-board: backlog
-  epic-1-retrospective: optional
+  1-3-mindmap-gantt-timeline-board: done
+  epic-1-retrospective: completed
 
-  epic-2: backlog
-  2-1-task-mapping-and-dependency: backlog
+  epic-2: in-progress
+  2-1-task-mapping-and-dependency: done
   2-2-approval-driven-execution: backlog
   2-3-notification-throttling: backlog
   epic-2-retrospective: optional

@@ -2,14 +2,15 @@
 /**
  * Quick WS sanity check:
  * 1) viewer 连接应拒绝写入（收到 error readonly client）
- * 2) editor 写入后 viewer 能收到 layout-sync
+ * 2) viewer 写入 graph-update 也应被拒绝
+ * 3) editor 写入后 viewer 能收到 layout-sync / graph-sync（含 depends-on + dependencyType）
  *
  * 运行前：启动 API 服务 (pnpm --filter @cdm/api dev)
  */
 import WebSocket from 'ws';
 
 const token = process.env.WS_EDITOR_TOKEN || 'test-token';
-const base = 'ws://localhost:4000/ws?graphId=demo-graph';
+const base = 'ws://127.0.0.1:4000/ws?graphId=demo-graph';
 
 const waitMessage = (ws: WebSocket, timeout = 2000) =>
   new Promise((resolve, reject) => {
@@ -19,6 +20,10 @@ const waitMessage = (ws: WebSocket, timeout = 2000) =>
       resolve(msg.toString());
     });
   });
+
+const expectContains = (raw: string, needle: string) => {
+  if (!raw.includes(needle)) throw new Error(`expected message to include "${needle}": ${raw}`);
+};
 
 async function main() {
   const viewer = new WebSocket(`${base}&role=viewer`);
@@ -32,6 +37,18 @@ async function main() {
   );
   const viewerResp = await waitMessage(viewer);
   console.log('viewer response:', viewerResp);
+  expectContains(viewerResp, 'readonly client');
+
+  viewer.send(
+    JSON.stringify({
+      type: 'graph-update',
+      actor: 'viewer',
+      snapshot: { nodes: [{ id: 'node-a' }, { id: 'node-b' }], edges: [{ from: 'node-a', to: 'node-b', relation: 'depends-on' }] },
+    })
+  );
+  const viewerGraphResp = await waitMessage(viewer);
+  console.log('viewer graph response:', viewerGraphResp);
+  expectContains(viewerGraphResp, 'readonly client');
 
   const editor = new WebSocket(`${base}&role=editor&token=${token}`);
   await new Promise((res) => editor.once('open', res));
@@ -53,11 +70,16 @@ async function main() {
     JSON.stringify({
       type: 'graph-update',
       actor: 'editor',
-      snapshot: { nodes: [{ id: 'node-x' }], edges: [] },
+      snapshot: {
+        nodes: [{ id: 'node-a', label: 'A', fields: { classification: 'public' } }, { id: 'node-b', label: 'B', fields: { classification: 'public' } }],
+        edges: [{ from: 'node-a', to: 'node-b', relation: 'depends-on', dependencyType: 'SS' }],
+      },
     })
   );
   const graphSyncMsg = await graphSyncPromise;
   console.log('viewer graph sync:', graphSyncMsg);
+  expectContains(graphSyncMsg, 'depends-on');
+  expectContains(graphSyncMsg, 'dependencyType');
 
   viewer.close();
   editor.close();

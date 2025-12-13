@@ -91,8 +91,13 @@ export class LayoutController {
     }
     if (typeof WebSocket !== 'undefined') {
       const token =
-        typeof window !== 'undefined' ? (window as any).__CDM_WS_TOKEN__ : undefined;
-      const wsUrl = `${apiBase.replace('http', 'ws')}/ws?graphId=${graphId}&role=${wsRole}${token ? `&token=${token}` : ''}`;
+        typeof window !== 'undefined'
+          ? ((window as any).__CDM_WS_TOKEN__ as unknown) ?? ((window as any).__CDM_HTTP_TOKEN__ as unknown)
+          : undefined;
+      const tokenValue = typeof token === 'string' && token.trim() ? token.trim() : undefined;
+      const wsUrl = `${apiBase.replace('http', 'ws')}/ws?graphId=${graphId}&role=${wsRole}${
+        tokenValue ? `&token=${encodeURIComponent(tokenValue)}` : ''
+      }`;
       this.ws = new WebSocket(wsUrl);
       this.ws.addEventListener('message', (ev) => {
         try {
@@ -122,7 +127,7 @@ export class LayoutController {
       if (!remote || (remote as { message?: string }).message === 'not-found') return this.state;
       this.state = {
         mode: remote.mode,
-        toggles: { ...(defaultToggles as LayoutToggles), ...(remote.payload as LayoutToggles) },
+        toggles: { ...(defaultToggles as LayoutToggles), ...(remote.payload as unknown as LayoutToggles) },
         version: remote.version,
         updatedAt: remote.updatedAt,
       };
@@ -155,6 +160,15 @@ export class LayoutController {
     }
   }
 
+  close() {
+    try {
+      this.channel?.close();
+    } catch {}
+    try {
+      this.ws?.close();
+    } catch {}
+  }
+
   toggle(flag: keyof LayoutToggles) {
     this.state = {
       ...this.state,
@@ -179,7 +193,7 @@ export class LayoutController {
       } as unknown as Omit<LayoutState, 'graphId'>);
       this.state = {
         mode: saved.mode,
-        toggles: { ...(defaultToggles as LayoutToggles), ...(saved.payload as LayoutToggles) },
+        toggles: { ...(defaultToggles as LayoutToggles), ...(saved.payload as unknown as LayoutToggles) },
         version: saved.version,
         updatedAt: saved.updatedAt,
         saving: false,
