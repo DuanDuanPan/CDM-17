@@ -12,3 +12,6 @@ Summary,Issue Type,Project Key,Priority,Assignee,Due Date,Story Points,Labels,Co
 "S1-SHARE-01 分享链接+密级校验+失效",Story,CDM,High,bob,2025-12-26,5,sharing,frontend,"只读分享链接；密级校验；失效按钮；访问记录写入。DoD: 链接可用，失效后拒绝访问，访问被记录。"
 "S1-PERF-01 1k 节点压测脚本",Story,CDM,High,dave,2025-12-26,3,performance,devops,"生成 1k 节点基线数据集与压测脚本；收集 P95 指标。DoD: 脚本可运行并产出指标报表。"
 "S1-OBS-01 前端埋点+后端队列监控",Story,CDM,High,dave,2025-12-26,3,observability,devops,"前端 FPS/交互埋点；后端队列/错误监控仪表盘。DoD: 关键指标可视化并有告警阈值。"
+"S1-UI-01 Tailwind 接入 spike (E1)",Story,CDM,Medium,bob,2025-12-26,2,frontend,frontend,"Spike：评估 Tailwind 接入方案，完成 PoC 卡片，输出决策与风险列表。DoD: 结论记录 + PoC 运行。"
+"S1-UI-02 Tailwind bootstrap (E1)",Story,CDM,High,bob,2025-12-26,3,frontend,frontend,"安装并配置 Tailwind/PostCSS，添加 token 种子与全局入口，web dev/build 通过。DoD: 配置落库 + 构建绿。"
+"S1-UI-03 Tailwind batch1 组件迁移 (E1)",Story,CDM,High,bob,2025-12-26,5,frontend,frontend,"迁移按钮/卡片/输入等 3 个通用组件到 Tailwind 并替换页面引用；附截图或 Story。DoD: lint/build 绿，页面无回归。"

@@ -35,6 +35,11 @@ source_plan: docs/sprint-plan.md
   - S1-PERF-01：1k 节点基线数据集与压测脚本。  
   - S1-OBS-01：前端埋点（FPS/交互）；后端队列监控仪表。
 
+- UI 与样式（Epic E1）  
+  - S1-UI-01：Tailwind 接入 spike（讨论/PoC）。  
+  - S1-UI-02：Tailwind bootstrap（安装配置、token 定义）。  
+  - S1-UI-03：Tailwind batch1 组件迁移（按钮/卡片/输入）。
+
 ## 导入用 CSV（示例，可贴到看板）
 ```csv
 ID,Title,Area,Priority,Owner,Due,Acceptance
@@ -51,6 +56,9 @@ S1-EXP-01,PDF/PNG导出(默认水印),导出与分享,P1,,,
 S1-SHARE-01,分享链接+密级校验+失效,导出与分享,P1,,,
 S1-PERF-01,1k节点压测脚本,性能与观测,P1,,,
 S1-OBS-01,前端埋点+后端队列监控,性能与观测,P1,,,
+S1-UI-01,Tailwind接入spike,UI与样式,P2,,,
+S1-UI-02,Tailwind bootstrap,UI与样式,P1,,,
+S1-UI-03,Tailwind batch1组件迁移,UI与样式,P1,,,
 ```
 
 ## 后续动作
