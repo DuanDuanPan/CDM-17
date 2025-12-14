@@ -20,6 +20,7 @@ export default defineConfig({
       '@cdm/core-client': path.resolve(__dirname, '../../packages/core-client/src'),
       '@cdm/sdk': path.resolve(__dirname, '../../packages/sdk/src'),
       '@cdm/types': path.resolve(__dirname, '../../packages/types/src'),
+      '@cdm/ui': path.resolve(__dirname, '../../packages/ui/src'),
     },
   },
 });

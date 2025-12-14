@@ -27,7 +27,7 @@ Epic 1 覆盖 US1.1～US1.3：
 
 ## What Didn’t Go Well / Risks
 
-- `apps/web/src/App.tsx` 体积偏大，逻辑耦合（视图、同步、历史、UI）使后续扩展成本上升
+- `apps/web/src/app.tsx` 体积偏大，逻辑耦合（视图、同步、历史、UI）使后续扩展成本上升
 - 部分产品语义受测试约束：
   - readonly 下不允许改变选中（当前由测试锁死），可能与真实“可看不可改但可选中”需求冲突
   - 下钻进入子图会覆盖同名子图快照以保证确定性，可能影响“复用既有子图”的用户预期
@@ -35,7 +35,7 @@ Epic 1 覆盖 US1.1～US1.3：
 
 ## Action Items (Next Sprint)
 
-1. 抽离 App.tsx：把视图管理/依赖编辑/历史管理下沉到 `@cdm/core-client`，Web 只保留壳与 UI 组合
+1. 抽离 app.tsx：把视图管理/依赖编辑/历史管理下沉到 `@cdm/core-client`，Web 只保留壳与 UI 组合
 2. 只读交互语义对齐：确认 readonly 是否允许“选中/高亮”；若允许，更新测试与交互策略
 3. 下钻语义改进：引入“复用/重建”策略（或版本化子图 graphId），避免覆盖造成数据意外丢失
 4. 测试并行化：每个测试使用独立 graphId 或在 setup/teardown 重置图数据，恢复并行执行能力
@@ -44,4 +44,3 @@ Epic 1 覆盖 US1.1～US1.3：
 
 - Sprint 状态：`docs/sprint-status.yaml`
 - 故事产物：`docs/sprint-artifacts/1-1-*`、`docs/sprint-artifacts/1-2-*`、`docs/sprint-artifacts/1-3-*`
-

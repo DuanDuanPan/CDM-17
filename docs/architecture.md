@@ -6,6 +6,16 @@ status: draft
 scope: 支撑 PRD（R1–R24）与性能/安全基线（1k 节点、50 并发）
 ---
 
+## 前端工程最佳实践（2025-12-13）
+- 结构与分层：按功能分组（feature 下含 components/hooks/services/tests/styles）；跨功能的原子/复合/UI 组件放 `packages/ui`，工具放 `packages/utils`；禁止跨包相对路径引用，只用别名/包依赖。当前 workspace 示例：`apps/web/src/features/workspace/{components,hooks,views,model}`；入口 `apps/web/src/app.tsx` 仅负责选择 POC/Workspace。
+- 单一职责：页面容器负责数据编排，呈现组件保持无副作用；跨视图采用懒加载，避免单文件过大。
+- 状态与逻辑：数据获取/权限/埋点等逻辑下沉到自定义 hooks（如 useGraphData/useDependencies/useMetrics），必要时再升到 Context。
+- UI 与样式（Tailwind）：统一在 `packages/ui` 封装 Button/Badge/Card/Input/Select 等基础组件；业务层少量 utilities 组合即可；workspace 避免使用 `.btn/.select` 这类局部 CSS 类。Tailwind 配置集中于根 `tailwind.config.cjs`，content 覆盖 apps/web 与 packages/ui，token（色板/圆角/阴影/spacing）统一维护；迁移期可关闭 preflight，完成后再评估开启统一 reset。
+- 可测试性：组件/Hook 旁边放 Storybook/截图或 Vitest snapshot；可用 `/?poc=uikit` + `apps/web/tests/ui-kit.spec.ts` 做基础组件 smoke；大文件（>300 行）须拆分或附拆分计划。
+- 依赖与流程：锁文件必提交；turbo/pnpm 任务声明 build 依赖 lint（见 `turbo.json`）；test 由具体工程选择（如 Playwright/Vitest），按需依赖 build；代码评审检查是否使用 `packages/ui` 组件、是否下沉逻辑为 hooks、文件尺寸/职责是否合理。
+
+> 所有新故事/功能 DoR 必须确认上述原则适用并写入验收标准；代码评审按此检查。
+
 ## 1. 目标与范围
 - 以脑图为单一真相源，覆盖需求/任务/审批/版本/权限/通知/导出/分享。
 - 满足性能：1k+ 节点、50 并发；P95 交互 <100ms；协同 <200ms；导出 P95<3s；访问记录查询 P95<2s。

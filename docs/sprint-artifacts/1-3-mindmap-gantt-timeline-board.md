@@ -83,8 +83,8 @@ Status: done
 
 ### File List
 
-- `apps/web/src/App.tsx`
-- `apps/web/src/style.css`
+- `apps/web/src/app.tsx`
+- `apps/web/src/features/workspace/styles/workspace.css`
 - `apps/web/tests/view-switch.spec.ts`
 - `apps/web/tests/dependency-collab.spec.ts`
 - `apps/web/vite.config.ts`

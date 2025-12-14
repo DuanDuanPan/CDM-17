@@ -76,7 +76,7 @@ Status: done
  - apps/api/src/index.ts
  - packages/sdk/src/index.ts
  - packages/core-client/src/index.ts
- - apps/web/src/App.tsx
- - apps/web/src/style.css
+ - apps/web/src/app.tsx
+ - apps/web/src/features/workspace/styles/workspace.css
  - apps/web/vite.config.ts
  - tooling/scripts/perf-layout.ts

@@ -6,7 +6,7 @@
       "dependsOn": ["^dev"]
     },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["lint", "^build"],
       "outputs": ["dist/**", "build/**"]
     },
     "lint": {
@@ -14,7 +14,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**", "test-results/**", "playwright-report/**"]
     }
   }
 }

@@ -81,8 +81,8 @@ Status: done
 
 ### File List
 
-- `apps/web/src/App.tsx`
-- `apps/web/src/style.css`
+- `apps/web/src/app.tsx`
+- `apps/web/src/features/workspace/styles/workspace.css`
 - `apps/web/vite.config.ts`
 - `apps/web/playwright.config.ts`
 - `apps/web/playwright.global-setup.ts`

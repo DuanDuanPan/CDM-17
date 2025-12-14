@@ -35,7 +35,7 @@ As a developer, I want Tailwind configured at repo level so I can build and run 
 ## 实施说明
 - 工具链：单一根级 `tailwind.config.cjs`（含 token 种子、preflight 关闭以渐进迁移，content 覆盖 index.html + web/src + packages/ui）；`postcss.config.cjs` 已启用 tailwindcss/autoprefixer。
 - 应用侧：入口 `apps/web/src/main.tsx` 全局引入 `styles/tailwind.css`。
-- 样式迁移：将原有全局 reset（:root 字体/背景、box-sizing、body margin）移至 `tailwind.css` 的 `@layer base`，避免重复；业务样式保留在 `style.css`。
+- 样式迁移：将原有全局 reset（:root 字体/背景、box-sizing、body margin）移至 `tailwind.css` 的 `@layer base`，避免重复；业务样式按 feature 下沉（如 workspace：`apps/web/src/features/workspace/styles/workspace.css`）。
 - PoC 组件不再单独引入 tailwind.css，避免重复注入。
 
 ## 验证记录（2025-12-13）

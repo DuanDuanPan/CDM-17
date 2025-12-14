@@ -33,7 +33,7 @@ As the UI team, we need a short spike to decide how to adopt Tailwind in the mon
 
 ## Progress (2025-12-13)
 - Added Tailwind tooling (tailwindcss/postcss/autoprefixer) with preflight disabled to avoid全局影响。
-- Created PoC demo `apps/web/src/poc/TailwindCard.tsx` + `styles/tailwind.css` and optional route via `?poc=tailwind`.
+- Created PoC demo `apps/web/src/poc/tailwind-card.tsx` + `styles/tailwind.css` and optional route via `?poc=tailwind`.
 - Configured `tailwind.config.cjs` content scope to web/ui packages; token seeds included; PostCSS wired.
 - Next: run dev/build smoke, capture screenshot + HMR/冷启动耗时，填写决策与风险并翻状态为 done.
 
