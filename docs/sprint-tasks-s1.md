@@ -35,10 +35,13 @@ source_plan: docs/sprint-plan.md
   - S1-PERF-01：1k 节点基线数据集与压测脚本。  
   - S1-OBS-01：前端埋点（FPS/交互）；后端队列监控仪表。
 
-- UI 与样式（Epic E1）  
+- UI 与样式（Epic E2）  
   - S1-UI-01：Tailwind 接入 spike（讨论/PoC）。  
   - S1-UI-02：Tailwind bootstrap（安装配置、token 定义）。  
   - S1-UI-03：Tailwind batch1 组件迁移（按钮/卡片/输入）。
+  - S1-UI-04：X6 画布 + 工作区 UI spike（选型 + PoC + 截图风格还原 + 性能基线）。
+  - S1-UI-05：X6 画布集成 v1（与现有数据/交互对齐；保留 fallback）。
+  - S1-UI-06：工作区 UI 还原 v1（top/left/right 三栏 + inspector tabs）。
 
 ## 导入用 CSV（示例，可贴到看板）
 ```csv

@@ -15,3 +15,6 @@ Summary,Issue Type,Project Key,Priority,Assignee,Due Date,Story Points,Labels,Co
 "S1-UI-01 Tailwind 接入 spike (E2)",Story,CDM,Medium,bob,2025-12-26,2,frontend,frontend,"Spike：评估 Tailwind 接入方案，完成 PoC 卡片，输出决策与风险列表。DoD: 结论记录 + PoC 运行。"
 "S1-UI-02 Tailwind bootstrap (E2)",Story,CDM,High,bob,2025-12-26,3,frontend,frontend,"安装并配置 Tailwind/PostCSS，添加 token 种子与全局入口，web dev/build 通过。DoD: 配置落库 + 构建绿。"
 "S1-UI-03 Tailwind batch1 组件迁移 (E2)",Story,CDM,High,bob,2025-12-26,5,frontend,frontend,"迁移按钮/卡片/输入等 3 个通用组件到 Tailwind 并替换页面引用；附截图或 Story。DoD: lint/build 绿，页面无回归。"
+"S1-UI-04 X6 画布+工作区 UI spike (E2)",Story,CDM,High,bob,2025-12-26,5,canvas,frontend,"Spike：评估并验证 AntV X6 作为画布引擎；实现截图同款风格 UI PoC（top/left/right）；记录 1k 节点交互基线与 bundle 体积变化。DoD: PoC 可运行 + 结论/风险/迁移计划落库。"
+"S1-UI-05 X6 画布集成 v1 (E2)",Story,CDM,High,bob,2025-12-26,5,canvas,frontend,"将 X6 从 PoC 推进到可替换默认脑图视图的 v1（可 feature flag）；与现有数据/交互对齐并保留 fallback。DoD: 关键 e2e 用例通过，交互无明显回退。"
+"S1-UI-06 工作区 UI 还原 v1 (E2)",Story,CDM,Medium,bob,2025-12-26,3,frontend,frontend,"升级工作区整体信息架构与视觉（顶部栏/左侧项目列表/右侧 inspector tabs）接近截图风格；不改变功能行为。DoD: 样式统一且关键用例通过。"

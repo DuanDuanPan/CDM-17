@@ -24,6 +24,39 @@ const editorToken = process.env.WS_EDITOR_TOKEN;
 
 fs.mkdirSync(dataDir, { recursive: true });
 
+// Seed a default demo graph so frontend has enough nodes out of the box.
+const seedDemoGraph = () => {
+  const existing = repo.getGraph('demo-graph');
+  if (existing && Array.isArray(existing.nodes) && existing.nodes.length > 0) return;
+  const now = new Date().toISOString();
+  const nodeCount = 200;
+  const nodes = Array.from({ length: nodeCount }, (_, i) => ({
+    id: `node-${i}`,
+    label: `节点 ${i}`,
+    kind: i % 5 === 0 ? 'task' : 'idea',
+    fields: {
+      classification: i % 9 === 0 ? 'confidential' : 'public',
+      start: '2025-01-01',
+      end: '2025-01-02',
+      progress: (i * 7) % 100,
+      status: (['todo', 'doing', 'done'] as const)[i % 3],
+    },
+    createdAt: now,
+    updatedAt: now,
+    x: i * 20,
+    y: i * 12,
+  }));
+  const edges = Array.from({ length: nodeCount - 1 }, (_, i) => ({
+    id: `edge-${i}`,
+    from: `node-${i}`,
+    to: `node-${i + 1}`,
+    relation: 'depends-on' as const,
+    dependencyType: 'FS' as const,
+  }));
+  repo.saveGraph('demo-graph', nodes as any[], edges as any[]);
+};
+seedDemoGraph();
+
 const getHttpToken = (req: { headers: Record<string, unknown>; query?: unknown }) => {
   const headerToken = req.headers['x-cdm-token'];
   if (typeof headerToken === 'string') return headerToken;

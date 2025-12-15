@@ -50,6 +50,9 @@ development_status:
   2-5-tailwind-bootstrap: done
   2-6-tailwind-migrate-batch1: done
   2-7-frontend-refactor-best-practice: done
+  2-8-x6-canvas-ui-spike: done
+  2-9-x6-canvas-integration-v1: in-progress
+  2-10-workspace-ui-screenshot-v1: drafted
   epic-2-retrospective: optional
 
   epic-3: backlog

@@ -28,6 +28,7 @@ export function seedGraphSnapshot(count: number): GraphSnapshot {
     folded: Math.random() > 0.7,
   }));
   const edges: PositionedEdge[] = Array.from({ length: count - 1 }, (_, i) => ({
+    id: `edge-${i}-${i + 1}`,
     from: `node-${i}`,
     to: `node-${i + 1}`,
   }));
@@ -70,4 +71,3 @@ export function buildSubgraphSnapshot(
   const subEdges = edges.filter((e) => ids.has(e.from) && ids.has(e.to));
   return { nodes: subNodes, edges: subEdges };
 }
-

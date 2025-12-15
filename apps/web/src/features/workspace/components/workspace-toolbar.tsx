@@ -1,4 +1,4 @@
-import type { LayoutControllerState } from '@cdm/core-client';
+﻿import type { LayoutControllerState } from '@cdm/core-client';
 import { Button } from '@cdm/ui';
 import type { DrillContext } from '@cdm/types';
 import { layoutModes, toggleList, viewModes, type LayoutMode, type ViewMode } from '../model/constants';

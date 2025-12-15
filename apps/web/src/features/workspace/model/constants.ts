@@ -1,4 +1,4 @@
-export const layoutModes = [
+﻿export const layoutModes = [
   { key: 'free', label: '自由' },
   { key: 'tree', label: '树' },
   { key: 'logic', label: '逻辑' },
@@ -35,4 +35,3 @@ export type DependencyType = (typeof dependencyTypes)[number]['key'];
 
 export const isDependencyType = (value: unknown): value is DependencyType =>
   typeof value === 'string' && dependencyTypes.some((t) => t.key === value);
-

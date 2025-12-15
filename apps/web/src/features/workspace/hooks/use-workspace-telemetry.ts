@@ -26,6 +26,7 @@ export type UseWorkspaceTelemetryOptions = {
   graphId: string;
   nodeCount: number;
   edgeCount: number;
+  skipRemote?: boolean;
 };
 
 export function useWorkspaceTelemetry({
@@ -36,6 +37,7 @@ export function useWorkspaceTelemetry({
   graphId,
   nodeCount,
   edgeCount,
+  skipRemote = false,
 }: UseWorkspaceTelemetryOptions) {
   const drillSamplesRef = useRef<number[]>([]);
   const returnSamplesRef = useRef<number[]>([]);
@@ -46,6 +48,7 @@ export function useWorkspaceTelemetry({
 
   const logVisit = useCallback(
     (action: string, nodeId: string | undefined, currentGraphId: string, classification: string) => {
+      if (skipRemote || !apiBase) return;
       fetch(`${apiBase}/visits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,11 +63,12 @@ export function useWorkspaceTelemetry({
         }),
       }).catch(() => undefined);
     },
-    [apiBase, isReadonly]
+    [apiBase, isReadonly, skipRemote]
   );
 
   const postMetric = useCallback(
     (name: string, value: number, context?: Record<string, unknown>) => {
+      if (skipRemote || !apiBase) return;
       fetch(`${apiBase}/metrics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,11 +82,12 @@ export function useWorkspaceTelemetry({
         }),
       }).catch(() => undefined);
     },
-    [apiBase]
+    [apiBase, skipRemote]
   );
 
   const postAudit = useCallback(
     (action: string, target: string, metadata?: Record<string, unknown>) => {
+      if (skipRemote || !apiBase) return;
       fetch(`${apiBase}/audit/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders },
@@ -95,7 +100,7 @@ export function useWorkspaceTelemetry({
         }),
       }).catch(() => undefined);
     },
-    [apiBase, authHeaders]
+    [apiBase, authHeaders, skipRemote]
   );
 
   const recordTiming = useCallback(
@@ -165,4 +170,3 @@ export function useWorkspaceTelemetry({
     startViewSwitchTiming,
   };
 }
-

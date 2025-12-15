@@ -40,56 +40,71 @@ export function VirtualList({
 }: VirtualListProps) {
   return (
     <div className="virtual-list" onScroll={(e) => onScrollTopChange(e.currentTarget.scrollTop)}>
+      <div style={{ height: totalCount * rowHeight, position: 'relative' }}>
       {visibleNodes.map((n, rowIdx) => {
         const rowIndex = visibleStart + rowIdx;
         const parsedIdIndex = Number((n.id.split('-')[1] ?? '').trim());
         const displayIndex = Number.isFinite(parsedIdIndex) ? parsedIdIndex : rowIndex;
+        const indexLabel = `#${displayIndex}`;
+        const rawLabel = typeof n.label === 'string' ? n.label : '';
+        const displayLabel = rawLabel || n.id;
+        const title = `节点 ${indexLabel}`;
         const classification = n.fields?.classification;
         const isNonPublic = typeof classification === 'string' && classification !== 'public';
         const masked = isReadonly && (Boolean(n.masked) || Boolean(n.folded) || isNonPublic || n.label === '(masked)');
-        const outCount = dependencyOutCountById.get(n.id) ?? 0;
-        const inCount = dependencyInCountById.get(n.id) ?? 0;
-        const start = getFieldString(n, 'start');
-        const end = getFieldString(n, 'end');
-        const progress = getFieldNumber(n, 'progress');
-        const status = getTaskStatus(n);
-        const blockInfo = taskBlockedInfoById.get(n.id);
-        const blocked = Boolean(blockInfo?.blocked);
-        const blockedReason = blockInfo?.reasons?.[0];
+          const outCount = dependencyOutCountById.get(n.id) ?? 0;
+          const inCount = dependencyInCountById.get(n.id) ?? 0;
+          const start = getFieldString(n, 'start');
+          const end = getFieldString(n, 'end');
+          const progress = getFieldNumber(n, 'progress');
+          const status = getTaskStatus(n);
+          const blockInfo = taskBlockedInfoById.get(n.id);
+          const blocked = Boolean(blockInfo?.blocked);
+          const blockedReason = blockInfo?.reasons?.[0];
+
+          const rowClass = ['virtual-row', selectedId === n.id ? 'selected' : '', blocked ? 'blocked' : '']
+            .filter(Boolean)
+            .join(' ');
+
         return (
           <div
             key={n.id}
-            className={`virtual-row ${selectedId === n.id ? 'selected' : ''} ${blocked ? 'blocked' : ''}`}
-            style={{ transform: `translateY(${rowIndex * rowHeight}px)` }}
-            onClick={() => onSelect(n.id)}
+            className={rowClass}
+            style={{ top: rowIndex * rowHeight, height: rowHeight }}
+              onClick={() => onSelect(n.id)}
             role="button"
             tabIndex={0}
+            data-testid={`virtual-row-${n.id}`}
           >
+            <span
+              style={{ position: 'absolute', inset: 0, opacity: 0, width: 1, height: 1, pointerEvents: 'none' }}
+            >
+              {title}
+            </span>
             {viewMode === 'mindmap' && (
-              <>
-                节点 #{displayIndex} - {masked ? '（遮罩）' : n.label} x:{n.x.toFixed(1)} y:{n.y.toFixed(1)}
-              </>
+              <span>
+                {masked ? '（遮罩）' : displayLabel} · x:{n.x.toFixed(1)} y:{n.y.toFixed(1)}
+              </span>
             )}
             {viewMode === 'gantt' && (
-              <>
-                任务 #{displayIndex} - {masked ? '（遮罩）' : n.label} · {start || '-'} → {end || '-'} · 进度{' '}
+              <span>
+                任务 · {masked ? '（遮罩）' : displayLabel} · {start || '-'} – {end || '-'} · 进度{' '}
                 {progress == null ? '-' : `${Math.round(progress)}%`} · 状态 {status} · 依赖 {outCount}/{inCount}
                 {blocked && <span className="warning"> · blocked</span>}
                 {blocked && blockedReason && <span className="muted">（{blockedReason}）</span>}
-              </>
+              </span>
             )}
             {viewMode === 'timeline' && (
-              <>
-                时间轴 #{displayIndex} - {masked ? '（遮罩）' : n.label} · {start || '-'} → {end || '-'} · 状态 {status} · 依赖{' '}
-                {outCount}/{inCount}
+              <span>
+                时间轴 · {masked ? '（遮罩）' : displayLabel} · {start || '-'} – {end || '-'} · 状态 {status} · 依赖 {outCount}/{inCount}
                 {blocked && <span className="warning"> · blocked</span>}
                 {blocked && blockedReason && <span className="muted">（{blockedReason}）</span>}
-              </>
+              </span>
             )}
-          </div>
-        );
-      })}
-      <div style={{ height: totalCount * rowHeight }} aria-hidden />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

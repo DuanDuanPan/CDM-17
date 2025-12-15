@@ -2,8 +2,22 @@ import type { GraphSnapshot, PositionedEdge, PositionedNode } from '../model/typ
 
 type HeadersInit = Record<string, string>;
 
-export async function loadGraphSnapshot(apiBase: string, authHeaders: HeadersInit, id: string): Promise<GraphSnapshot> {
-  const res = await fetch(`${apiBase}/graph/${encodeURIComponent(id)}`, { headers: authHeaders });
+export async function loadGraphSnapshot(
+  apiBase: string,
+  authHeaders: HeadersInit,
+  id: string,
+  skipRemote = false,
+  timeoutMs = 2000
+): Promise<GraphSnapshot> {
+  if (skipRemote) {
+    return { nodes: [], edges: [] };
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const res = await fetch(`${apiBase}/graph/${encodeURIComponent(id)}`, {
+    headers: authHeaders,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
   if (!res.ok) throw new Error(`GET /graph/${id} failed: ${res.status}`);
   const raw = (await res.json()) as { nodes?: unknown[]; edges?: unknown[] };
   const now = new Date().toISOString();
@@ -30,13 +44,18 @@ export async function saveGraphSnapshot(
   apiBase: string,
   authHeaders: HeadersInit,
   id: string,
-  snapshot: GraphSnapshot
+  snapshot: GraphSnapshot,
+  skipRemote = false,
+  timeoutMs = 2000
 ) {
+  if (skipRemote) return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const res = await fetch(`${apiBase}/graph/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify(snapshot),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
   if (!res.ok) throw new Error(`PUT /graph/${id} failed: ${res.status}`);
 }
-

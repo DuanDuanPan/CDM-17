@@ -10,6 +10,7 @@ export type UseWorkspaceGraphOptions = {
   sampleNodeCount: number;
   initialGraphId?: string;
   onGraphLoaded?: (args: { graphId: string; nodes: PositionedNode[]; edges: PositionedEdge[] }) => void | Promise<void>;
+  skipRemote?: boolean;
 };
 
 export function useWorkspaceGraph({
@@ -19,6 +20,7 @@ export function useWorkspaceGraph({
   sampleNodeCount,
   initialGraphId = 'demo-graph',
   onGraphLoaded,
+  skipRemote = false,
 }: UseWorkspaceGraphOptions) {
   const [graphId, setGraphId] = useState(initialGraphId);
   const nodesRef = useRef<PositionedNode[]>([]);
@@ -46,23 +48,23 @@ export function useWorkspaceGraph({
   const applySnapshot = useCallback(
     async (id: string, snapshot: GraphSnapshot) => {
       setSnapshot(snapshot);
-      await saveGraphSnapshot(apiBase, authHeaders, id, snapshot);
+      await saveGraphSnapshot(apiBase, authHeaders, id, snapshot, skipRemote);
     },
-    [apiBase, authHeaders, setSnapshot]
+    [apiBase, authHeaders, setSnapshot, skipRemote]
   );
 
   const saveSnapshot = useCallback(
     async (id: string, snapshot: GraphSnapshot) => {
-      await saveGraphSnapshot(apiBase, authHeaders, id, snapshot);
+      await saveGraphSnapshot(apiBase, authHeaders, id, snapshot, skipRemote);
     },
-    [apiBase, authHeaders]
+    [apiBase, authHeaders, skipRemote]
   );
 
   const loadSnapshot = useCallback(
     async (id: string) => {
-      return loadGraphSnapshot(apiBase, authHeaders, id);
+      return loadGraphSnapshot(apiBase, authHeaders, id, skipRemote, 5000);
     },
-    [apiBase, authHeaders]
+    [apiBase, authHeaders, skipRemote]
   );
 
   useEffect(() => {
@@ -72,19 +74,23 @@ export function useWorkspaceGraph({
       if (snap) preloadedGraphRef.current.delete(graphId);
       if (!snap) {
         try {
-          snap = await loadGraphSnapshot(apiBase, authHeaders, graphId);
+          snap = await loadGraphSnapshot(apiBase, authHeaders, graphId, skipRemote, 5000);
         } catch (err) {
           console.warn('load graph failed', err);
         }
       }
       if (!snap?.nodes || snap.nodes.length === 0) {
-        const seeded = seedGraphSnapshot(sampleNodeCount);
-        setSnapshot(seeded);
-        if (!isReadonly) {
-          try {
-            await saveGraphSnapshot(apiBase, authHeaders, graphId, seeded);
-          } catch (err) {
-            console.warn('seed graph save failed', err);
+        if (skipRemote) {
+          setSnapshot({ nodes: [], edges: [] });
+        } else {
+          const seeded = seedGraphSnapshot(sampleNodeCount);
+          setSnapshot(seeded);
+          if (!isReadonly) {
+            try {
+              await saveGraphSnapshot(apiBase, authHeaders, graphId, seeded, skipRemote);
+            } catch (err) {
+              console.warn('seed graph save failed', err);
+            }
           }
         }
       } else {
@@ -99,7 +105,7 @@ export function useWorkspaceGraph({
     return () => {
       cancelled = true;
     };
-  }, [apiBase, authHeaders, graphId, isReadonly, onGraphLoaded, sampleNodeCount, setSnapshot]);
+  }, [apiBase, authHeaders, graphId, isReadonly, onGraphLoaded, sampleNodeCount, setSnapshot, skipRemote]);
 
   return {
     graphId,
@@ -117,4 +123,3 @@ export function useWorkspaceGraph({
     loadSnapshot,
   };
 }
-

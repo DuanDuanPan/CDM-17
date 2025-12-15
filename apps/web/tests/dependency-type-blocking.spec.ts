@@ -110,4 +110,3 @@ test('batch status updates all task nodes', async ({ page, request }) => {
     });
   }
 });
-

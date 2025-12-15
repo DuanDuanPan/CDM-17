@@ -1,4 +1,4 @@
-import type { LayoutControllerState } from '@cdm/core-client';
+﻿import type { LayoutControllerState } from '@cdm/core-client';
 import type { RefObject } from 'react';
 import { layoutModes, toggleList, viewModes, type LayoutMode, type ViewMode } from '../model/constants';
 import type { PositionedNode } from '../model/types';
@@ -134,4 +134,5 @@ export function CanvasSection({
     </Section>
   );
 }
+
 
